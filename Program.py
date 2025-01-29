@@ -23,6 +23,7 @@ hasLoadedFileData = False # this if used to tell if we have data in the TreeView
 col_storage_pd = pd.DataFrame()
 wb = None
 removed_columns_str = "(REMOVED COLUMN)"
+allow_multiple_file_uploads_bool = False
 
 
 
@@ -207,6 +208,13 @@ def checkbox_state_changed(index):
         #move back to treeview
         add_back_column(treev, index)
 
+def allow_multiple_file_uploads():
+    global allow_multiple_file_uploads_bool
+    if allow_multiple_file_uploads_bool:
+        allow_multiple_file_uploads_bool = False
+    else:
+        if messagebox.showwarning("DANGEROUS OPTION!", "Are you sure you want to allow for opening muliple file? This can cause issues with columns and currupt data. Only do this if you are sure that the data which is being opened has all the same columns.", type=messagebox.OKCANCEL):
+            allow_multiple_file_uploads_bool = True
 
 
 
@@ -217,15 +225,25 @@ def load_file():
     global wb
     file_path = open_file()
     if file_path:
-        if hasLoadedFileData:
-            if show_option_dialog("Save current Data!", "Would you like to first save the data you are working with before you overwrite it with new data?"):
-                if file_save_as():
-                    firstTimeOver = False
-                else:
-                    return
-            # Remove all data in the Treeview
-            for item in treev.get_children():
-                treev.delete(item)
+        if not allow_multiple_file_uploads_bool:
+            if hasLoadedFileData:
+                if show_option_dialog("Save current Data!", "Would you like to first save the data you are working with before you overwrite it with new data?"):
+                    if file_save_as():
+                        firstTimeOver = False
+                    else:
+                        return
+                # Remove all data in the Treeview
+                for item in treev.get_children():
+                    treev.delete(item)
+        
+        #remove all checkboxes:
+        print(ButtonsN)
+        print(len(ButtonsN))
+        for i in range(len(ButtonsN)): # we dont want to use i since it is not the front item thwn we want to 
+            #delete first item as we go through the list.
+            ButtonsN[0].destroy()
+            ButtonsN.pop(0)
+                
         hasLoadedFileData = True #this prevents us from loading two different data sets with different columns.
         
         #check if files are CSV then convert to excel:
@@ -249,7 +267,6 @@ def load_file():
             if firstTimeOver is True:
                 # Defining number of columns
                 treev['columns'] = (row)
-                ButtonsN = []
                 check_vars = []
                 for i,header in enumerate(row):
                     var = IntVar()
@@ -296,14 +313,28 @@ def write_to_excel(tree, filename):
     df = pd.DataFrame(data, columns=[tree.heading(col, "text") for col in tree["columns"]])
 
     #print(df)
-
-    df.drop(columns=removed_columns_str, axis=1, inplace=True)
+    if len(removed_columns_str):
+        try:
+            df.drop(columns=removed_columns_str, axis=1, inplace=True)
+        except KeyError:
+            print("NO COLUMNS WERE REMOVED")
 
     # Save the DataFrame to an Excel file
     df.to_excel(filename.name, index=False)
 
 
 
+def attempt_end_program():
+    if show_option_dialog("Save and Quit?", "Would you like to save the file before you Exit?"):
+        if file_save_as():
+            messagebox.showinfo("File Saved","File Saved Sucessfully!")
+        else:
+            messagebox.showerror("FAILED SAVE","File Did Not Save Sucessfully!")
+    if messagebox.askokcancel("Quit?", "Would you like to Quit the Program?"):
+        r.destroy()
+        
+
+r.protocol("WM_DELETE_WINDOW", attempt_end_program)
 
 #Adding a menu Bar:
 
@@ -316,8 +347,12 @@ filemenu.add_command(label="New", command=donothing)
 filemenu.add_command(label="Open", command=load_file)
 filemenu.add_command(label="Save", command=file_save_as)
 filemenu.add_separator()
-filemenu.add_command(label="Exit", command=r.quit)
+filemenu.add_command(label="Exit", command=attempt_end_program)
 menubar.add_cascade(label="File", menu=filemenu)
+
+overrideMenu = Menu(menubar, tearoff=0)
+overrideMenu.add_checkbutton(label="Allow Multiple File", command=allow_multiple_file_uploads)
+menubar.add_cascade(label="OverRide", menu=overrideMenu)
 
 helpmenu = Menu(menubar, tearoff=0)
 helpmenu.add_command(label="Help Index", command=donothing)
