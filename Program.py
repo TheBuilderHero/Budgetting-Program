@@ -22,6 +22,7 @@ excel_save_file_extension = '.xlsx'
 hasLoadedFileData = False # this if used to tell if we have data in the TreeView or not for saving it when opening a new file.
 col_storage_pd = pd.DataFrame()
 wb = None
+removed_columns_str = "(REMOVED COLUMN)"
 
 
 
@@ -33,7 +34,7 @@ r.resizable(width=False, height=False)
 r.title('Budgetting App')
 
 # This will create a LabelFrame
-label_frame = LabelFrame(r, text='Columns Included and useful', font = "50")
+label_frame = LabelFrame(r, text='Columns To Remove When Saved', font = "50")
 
 ButtonsN = []
 
@@ -169,58 +170,30 @@ def file_save_as():
         return False
     
 
-def remove_column(tree, index):
+#function to hide and reveal columns
+def add_back_column(tree, index):
+    global removed_columns_str # this was a string but now is just a heading
+    # Remove the second column
+    tree.column(treev['columns'][index], width=275, stretch=True)
+    tree.heading(treev['columns'][index], text=treev['columns'][index])
+    #print(treev['columns'])
+    #removed_columns.remove(treev['columns'][index])
+    #print(removed_columns)
 
+#function to hide and reveal columns
+def remove_column(tree, index):
+    global removed_columns_str
     # Remove the second column
     tree.column(treev['columns'][index], width=0, stretch=False)
-    tree.heading(treev['columns'][index], text="")
-    print(treev['columns'])
-    #for item in treev[]
+    tree.heading(treev['columns'][index], text=removed_columns_str)
+    #print(treev['columns'])
+    #removed_columns.append(treev['columns'][index])
+    #print(removed_columns)
 
-    '''# Get the column names
-    columns = tree["columns"]
-
-    # Remove the specified column from the list
-    columns = [col for i,col in enumerate(columns) if i != column_id]
-
-    # Create a new Treeview with the updated columns
-    new_tree = ttk.Treeview(tree.master, columns=columns, show="headings")
-
-    # Copy the headings
-    for col in columns:
-        new_tree.heading(col, text=tree.heading(col)["text"])
-
-    # Copy the data
-    for item in tree.get_children():
-        values = tree.item(item, "values")
-        new_values = [values[i] for i, col in enumerate(columns) if col != column_id]
-        new_tree.insert("", "end", values=new_values)
-        treev.delete(item)
-
-    # Replace the old Treeview with the new one
-    tree.destroy()
-    return new_tre'''
-
-def copy_column(column_index):
-    global treev
-    """Copy selected column from Treeview to a pandas DataFrame column."""
-
-    # Get the column name 
-    column_name = treev.heading(column_index, "text")
-
-    # Create a list of values in the selected column
-    column_values = []
-    for child in treev.get_children():
-        column_values.append(treev.item(child, "values")[column_index])
-
-    # Create a pandas DataFrame from the column values
-    df = pd.DataFrame({column_name: column_values})
-
-    return df
     
 # Callback function to handle the checkbox state change
 def checkbox_state_changed(index):
-    global col_storage_pd
+    #global col_storage_pd
     global treev
     """Callback function that gets triggered when a checkbox state changes."""
     state = check_vars[index].get()  # Get the state of the checkbox
@@ -232,21 +205,8 @@ def checkbox_state_changed(index):
     else:
         #this means the column should be included
         #move back to treeview
-        return
+        add_back_column(treev, index)
 
-
-
-
-# Create checkboxes and associate each with an IntVar to track state
-
-'''for i in range(5):
-    var = tk.IntVar()
-    check_vars.append(var)  # Store the IntVar for each checkbox
-    
-    # Create the checkbox and pack it into the window
-    checkbox = tk.Checkbutton(r, text=f"Checkbox {i+1}", variable=var, command=lambda index=i: checkbox_state_changed(index))
-    checkbox.pack()
-    '''
 
 
 
@@ -274,7 +234,7 @@ def load_file():
             file_path = convert_csv_to_excel(file_path)
         
         # Load the workbook
-        print(file_path)
+        #print(file_path)
         wb = openpyxl.load_workbook(file_path)
 
         # Select the active sheet
@@ -334,6 +294,10 @@ def write_to_excel(tree, filename):
 
     # Create a Pandas DataFrame from the data
     df = pd.DataFrame(data, columns=[tree.heading(col, "text") for col in tree["columns"]])
+
+    #print(df)
+
+    df.drop(columns=removed_columns_str, axis=1, inplace=True)
 
     # Save the DataFrame to an Excel file
     df.to_excel(filename.name, index=False)
