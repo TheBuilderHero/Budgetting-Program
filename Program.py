@@ -21,12 +21,20 @@ excel_save_file_extension = '.xlsx'
 r = tk.Tk()
 # Adjust size
 # I want it resizable so that the scrolling and the data boxes are not messed up by it.
+r.minsize(width=600,height=10)
 r.resizable(width=False, height=False)
 r.title('Budgetting App')
 
 
 # Using treeview widget    
-treev = ttk.Treeview(r, selectmode ='browse')
+treev = ttk.Treeview(r, height=20, selectmode ='extended')
+
+'''
+    Setting the Select Mode:
+        browse: (Default) Only one item can be selected at a time. Clicking on an item selects it and deselects any previously selected item.
+        extended: Multiple items can be selected by holding down the Shift key or Ctrl key (Command key on macOS).
+        none: Disables selection entirely.
+'''
 
 # Constructing vertical scrollbar
 # with treeview
@@ -74,12 +82,32 @@ def open_file():
         print("No file selected.")
         return False
 
+def is_decimal_string(input):
+    import re
+
+    pattern = r"-?\d+\.\d+"
+
+    match = re.search(pattern, input)
+
+    if match:
+        return True
+    else:
+        return False
+
 def convert_csv_to_excel(fileName): #returns the new file name
     wb = openpyxl.Workbook()
     ws = wb.active
     with open(file=fileName, mode='r') as f:
         reader = csv.reader(f, delimiter=',')
         for row in reader:
+            # Cell to modify
+            for i in range(len(row)):
+                # Convert the value to a number and remove leading zeros
+                if is_decimal_string(row[i]): 
+                    try:
+                        row[i] = float(row[i])
+                    except ValueError:
+                        pass  # Handle the case where the cell doesn't contain a number
             ws.append(row)
 
     filename_without_extension = os.path.splitext(fileName)[0]
