@@ -2,18 +2,43 @@
 import openpyxl
 # GUI:
 import tkinter as tk
-import tkinter.filedialog as dia
+import tkinter.filedialog as filedialog
 from tkinter import ttk
 # CSV to Excel formatting:
 import csv
+import os # file extension removal
+# Menu bar:
+from tkinter import Menu
+from tkinter import OptionMenu
 
 
 
-r = tk.Tk()# Adjust size
-#r.geometry("1600x800")
-#r.minsize(width=1600,height=800)
+r = tk.Tk()
+# Adjust size
+# I want it resizable so that the scrolling and the data boxes are not messed up by it.
 r.resizable(width=False, height=False)
 r.title('Budgetting App')
+
+#Adding a menu Bar:
+
+def donothing():
+    return
+
+menubar = Menu(r)
+filemenu = Menu(menubar, tearoff=0)
+filemenu.add_command(label="New", command=donothing)
+filemenu.add_command(label="Open", command=donothing)
+filemenu.add_command(label="Save", command=donothing)
+filemenu.add_separator()
+filemenu.add_command(label="Exit", command=r.quit)
+menubar.add_cascade(label="File", menu=filemenu)
+
+helpmenu = Menu(menubar, tearoff=0)
+helpmenu.add_command(label="Help Index", command=donothing)
+helpmenu.add_command(label="About...", command=donothing)
+menubar.add_cascade(label="Help", menu=helpmenu)
+
+r.config(menu=menubar)
 
 # Using treeview widget    
 treev = ttk.Treeview(r, selectmode ='browse')
@@ -40,7 +65,7 @@ treev.pack(side ='left', fill='x', anchor='nw')
 # Configuring treeview
 treev.configure(yscrollcommand = verscrlbar.set, xscrollcommand=horzscrlbar.set)
 
-listOfBoxes = []
+# The above packing was done in this order to help with the window layout. Other packing orders have not yeilded this good of a result.
 
 def hide_object(ob):
     if type(ob) is not list:
@@ -55,15 +80,54 @@ def show_object(ob, appen, fill):
         return
     for ite in ob:
         ite.pack(expand = True, fill=fill, side=appen)
-def button_click():
-    fil = dia.askopenfilename(filetypes=[('Excel', '*.xlsx'),('Excel', '*.xlsm'),('Excel', '*.xlsb'),('Excel', '*.xltx'), ('CSV files', '*.csv')])
-    #print("Button clicked!")
-    #print("ran test")
-    if fil is not None:
-        #Lb = tk.Listbox(r)
+def open_file():
+    file_path = filedialog.askopenfilename(filetypes=[('Excel', '*.xlsx'),('Excel', '*.xlsm'),('Excel', '*.xlsb'),('Excel', '*.xltx'), ('CSV files', '*.csv')])
+    if file_path:
+        print("Selected file:", file_path)
+        return file_path
+    else:
+        print("No file selected.")
+        return False
 
+def convert_csv_to_excel(fileName): #returns the new file name
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    with open(file=fileName, mode='r') as f:
+        reader = csv.reader(f, delimiter=',')
+        for row in reader:
+            ws.append(row)
+
+    filename_without_extension = os.path.splitext(fileName)[0]
+
+    newFileName = filename_without_extension + '.xlsx'
+    wb.save(newFileName)
+
+    return newFileName
+
+    
+    #Note for future if I need more control over the data going into each row:
+    """ 
+    with open('classics.csv') as f:
+        reader = csv.reader(f, delimiter=',')
+
+        for row_index, row in enumerate(reader, start=1):
+            for column_index, cell_value in enumerate(row, start=1):
+            ws.cell(row=row_index, column=column_index).value=cell_value
+    """
+
+
+
+def load_excel_file():
+    file_path = open_file()
+    file_extension = os.path.splitext(file_path)[1]
+    print("Extension: ", file_extension)
+    print("Path: ", file_path)
+    if file_extension == '.CSV':
+        file_path = convert_csv_to_excel(file_path)
+        print("File has been converted from ", file_extension, " to ", os.path.splitext(file_path)[1])
+    if file_path:
         # Load the workbook
-        wb = openpyxl.load_workbook(fil)
+        wb = openpyxl.load_workbook(file_path)
 
         # Select the active sheet
         sheet = wb.active
@@ -73,39 +137,25 @@ def button_click():
 
         # Read and print the data
         for row in sheet.iter_rows(min_row=1, values_only=True):
+            # After the first run through row 1 we will no longer be adding columns
             if firstTimeOver is True:
                     # Defining number of columns
                     treev['columns'] = (row)
+            else:
+                treev.insert("", 'end', text ="L1", values =(row))
             for i,col in enumerate(row):
                 if firstTimeOver is True:
-                    # Defining number of columns
-                    #treev['columns'] = tuple(treev['columns']) + tuple(str(i),)
-                    listOfBoxes.append(tk.Listbox(r, width=25))
-                    # Assigning the width and anchor to  the
-                    # respective columns
+                    # Assigning the heading names to the respective columns
                     treev.column(str(i))
-                    # Assigning the heading names to the 
-                    # respective columns
                     treev.heading(column=str(i), text=col)
-                    print(col)
-
-                else:
-                    listOfBoxes[i].insert(tk.END, col)
             
-            treev.insert("", 'end', text ="L1", values =(row))
-                #print(col)
-            # After the first run through row 1 we will no longer be adding columns
-            firstTimeOver = False
-        #print(cell_obj.value)
-        print(treev["columns"])
+            firstTimeOver = False # After the first run through row 1 we will no longer be adding columns
+
         # Defining heading
         treev['show'] = 'headings'
-        print(treev['show'])
-        print(listOfBoxes)
-        #show_object(listOfBoxes,"right","both")
-#hide_object(listOfBoxes)
 
-button_click()
+#this runs the program to prompt for a file.
+load_excel_file()
 #button = tk.Button(r, text='Open File', width=25, command=button_click)
 #show_object(button,"bottom","none")
 
