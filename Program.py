@@ -9,6 +9,7 @@ from tkinter import messagebox
 from tkinter import LabelFrame
 from tkinter import Checkbutton
 from tkinter import IntVar
+from tkinter import StringVar
 # CSV to Excel formatting:
 import csv
 import os # file extension removal
@@ -24,8 +25,7 @@ col_storage_pd = pd.DataFrame()
 wb = None
 removed_columns_str = "(REMOVED COLUMN)"
 allow_multiple_file_uploads_bool = False
-
-
+custom_category_options = []
 
 r = tk.Tk()
 # Adjust size
@@ -37,12 +37,31 @@ r.title('Budgetting App')
 # This will create a LabelFrame
 label_frame = LabelFrame(r, text='Columns To Remove When Saved', font = "50")
 
+# This will create a LabelFrame
+label_category_selection = LabelFrame(r, text='Custom budget Category Selection', font = "50")
+
 ButtonsN = []
 
 # List to hold the checkboxes' variable references
 check_vars = []
 
 
+
+def get_selected_tree_row_add_category():
+    selected_items = treev.selection()
+
+    for item in selected_items:
+        values_in_row = treev.item(item).get("values")
+        '''new_values = []
+        item_1 = True
+        for values in values_in_row:
+            if item_1:
+                new_values.append(dropdown.current())
+            else:
+                new_values.append(values)'''
+        
+        treev.set(item=item,column=0,value=dropdown["values"][dropdown.current()])
+        print(treev.item(item).get("values")[0])
 
 
 # Using treeview widget    
@@ -76,7 +95,27 @@ horzscrlbar.pack(side='bottom', fill='x', anchor='sw')
 treev.pack(side ='left', fill='x', anchor='nw')
 
 
-label_frame.pack(side='right', anchor='center', padx=20)
+label_frame.pack(side='top', anchor='n', padx=20)
+label_category_selection.pack(side='bottom', anchor='s', padx=20)
+
+#adding stuff to the custom categories
+entry = ttk.Entry(label_category_selection, width = 20)
+entry.pack()
+
+
+
+def add_new_category():
+    message_str = "Would you like to add the new Category \"" + entry.get() + "\" to your column category options?"
+    if messagebox.askokcancel("Add New Category", message_str):
+        values = list(dropdown["values"])
+        dropdown["values"] = values + [entry.get()]
+
+entry_b = ttk.Button(label_category_selection, text='Add New Label', width = 20, command=add_new_category)
+entry_b.pack()
+dropdown = ttk.Combobox(label_category_selection, width = 20, state="readonly")
+dropdown.pack()
+dropdown_add = ttk.Button(label_category_selection, text='Add New Label', width = 20, command=get_selected_tree_row_add_category)
+dropdown_add.pack()
  
 # Configuring treeview
 treev.configure(yscrollcommand = verscrlbar.set, xscrollcommand=horzscrlbar.set)
@@ -103,6 +142,7 @@ def open_file():
     else:
         print("No file selected.")
         return False
+    
 
 def is_decimal_string(input):
     import re
@@ -259,6 +299,7 @@ def load_file():
         sheet = wb.active
         
         firstTimeOver = True
+        skip_add_col = -1
         #columnsInTree = ()
 
         # Read and print the data
@@ -266,6 +307,12 @@ def load_file():
             # After the first run through row 1 we will no longer be adding columns
             if firstTimeOver is True:
                 # Defining number of columns
+                # Find the index of 'Custom Category'
+                try:
+                    skip_add_col = row.index('Custom Category')
+                except ValueError:
+                    skip_add_col = skip_add_col
+                row = ("Custom Category",) + row
                 treev['columns'] = (row)
                 check_vars = []
                 for i,header in enumerate(row):
@@ -278,7 +325,7 @@ def load_file():
                         onvalue = 1, 
                         offvalue = 0, 
                         height = 2, 
-                        width = 10,
+                        width = 20,
                         command=lambda index=i: checkbox_state_changed(index))
                     ButtonsN.append(tempButt)
                     # Set the trace to call checkbox_state_changed whenever the variable changes
@@ -286,6 +333,7 @@ def load_file():
                 for butt in ButtonsN:
                     butt.pack(side='top', anchor='center')
             else:
+                row = ("",) + row
                 treev.insert("", 'end', text ="L1", values =(row))
             for i,col in enumerate(row):
                 if firstTimeOver is True:
