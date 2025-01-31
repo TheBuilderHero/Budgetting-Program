@@ -32,6 +32,7 @@ col_storage_pd = pd.DataFrame()
 wb = None
 removed_columns_str = "(REMOVED COLUMN)"
 allow_multiple_file_uploads_bool = False
+cate_add_warnings_bool = True
 custom_category_options = []
 
 r = tk.Tk()
@@ -49,18 +50,49 @@ treev = ttk.Treeview(r, height=20, selectmode ='extended')
 
 
 def open_export_window():
+    custom_col = 'custom'
 
     def clear_entry():
         ent_new.delete(0, tk.END)
+
+    def reverse(x):
+        return x[::-1]
 
     def edit():
         # Get selected item to Edit
         selected_item = categories.selection()[0]
         text = categories.item(selected_item)['text']
         value = categories.item(selected_item)['values'][0]
-        new_text = text.replace(str(value), ent_new.get())
-        categories.item(selected_item, text=new_text, values=(ent_new.get()))
+        #reverse the text and values so that we can make sure to replace the end of the data and not the beginning.
+        r_text = reverse(text)
+        r_value = reverse(value)
+        new_text = r_text.replace(str(r_value), reverse(ent_new.get()), 1)
+        categories.item(selected_item, text=reverse(new_text), values=(ent_new.get()))
+        print(True if custom_col in categories.item(selected_item)["tags"] else False)
+        #update the custom name in the whole tree:
+        for row in treev.get_children():
+            if value == treev.item(row)['values'][0]:
+                print(treev.item(row))
+                old_values = treev.item(row)['values']
+                old_values.pop(0) # this will remove the old custom name
+                new_values = (ent_new.get(),) + tuple(old_values)
+                treev.item(row, values=new_values)
+                print(treev.item(row))
+        
+        #update the custom name in drop down menu
+        # Get the current values
+        values = list(dropdown["values"])
+
+        # Replace a specific value
+        i = values.index(value)
+        values[i] = ent_new.get()
+
+        # Update the Combobox with the modified values
+        dropdown["values"] = values
+        dropdown.set("")
         clear_entry()
+
+        #if categories.item(selected_item)
 
     export_screen = tk.Toplevel(r)
     export_screen.title("Export")
@@ -83,7 +115,7 @@ def open_export_window():
         if custom_val not in unique_values:
             unique_values.append(custom_val)
             str_1_head = "Category Name: " + custom_val
-            head_1 = categories.insert("", 'end', text =str_1_head, values=(custom_val))
+            head_1 = categories.insert("", 'end', text =str_1_head, values=(custom_val), tags=custom_col)
             child_l1 = categories.insert(head_1, 'end', text ="Budget Min: $0", values=("0"))
             child_l2 = categories.insert(head_1, 'end', text ="Budget Max: $0", values=("0"))
 
@@ -155,6 +187,10 @@ check_vars = []
 
 
 def get_selected_tree_row_add_category():
+    print(len(dropdown["values"]))
+    #if there have been no values added to category.
+    if len(dropdown["values"]) == 0:
+        return
     selected_items = treev.selection()
 
     for item in selected_items:
@@ -207,8 +243,11 @@ def clear_new_category_entry():
         entry.delete(0, tk.END)
 
 def add_new_category():
+    print(len(entry.get()))
+    if len(entry.get()) == 0:
+        return
     message_str = "Would you like to add the new Category \"" + entry.get() + "\" to your column category options?"
-    if messagebox.askokcancel("Add New Category", message_str):
+    if messagebox.askokcancel("Add New Category", message_str) if cate_add_warnings_bool else True:
         values = list(dropdown["values"])
         dropdown["values"] = values + [entry.get()]
         clear_new_category_entry()
@@ -346,6 +385,13 @@ def checkbox_state_changed(index):
         #move back to treeview
         add_back_column(treev, index)
 
+def cate_add_warnings():
+    global cate_add_warnings_bool
+    if cate_add_warnings_bool:
+        cate_add_warnings_bool = False
+    else:
+        cate_add_warnings_bool = True
+
 def allow_multiple_file_uploads():
     global allow_multiple_file_uploads_bool
     if allow_multiple_file_uploads_bool:
@@ -375,8 +421,6 @@ def load_file():
                     treev.delete(item)
         
         #remove all checkboxes:
-        print(ButtonsN)
-        print(len(ButtonsN))
         for i in range(len(ButtonsN)): # we dont want to use i since it is not the front item thwn we want to 
             #delete first item as we go through the list.
             ButtonsN[0].destroy()
@@ -415,8 +459,6 @@ def load_file():
                 treev['columns'] = (row)
                 check_vars = []
                 for i,header in enumerate(row):
-                    print(header)
-                    print(i , " vs ", True if i == 0 else False)
                     if i == 0: # skip adding the removeal checkbox for custom column
                         continue
                     var = IntVar()
@@ -511,6 +553,7 @@ menubar.add_cascade(label="File", menu=filemenu)
 
 overrideMenu = Menu(menubar, tearoff=0)
 overrideMenu.add_checkbutton(label="Allow Multiple File", command=allow_multiple_file_uploads)
+overrideMenu.add_checkbutton(label="Turn Off Category Addition Warnings", command=cate_add_warnings)
 menubar.add_cascade(label="OverRide", menu=overrideMenu)
 
 helpmenu = Menu(menubar, tearoff=0)
