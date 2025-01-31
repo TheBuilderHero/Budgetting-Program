@@ -19,6 +19,13 @@ from tkinter import OptionMenu
 #TreeView data to Excel:
 import pandas as pd
 
+################################
+#Program Version:
+VERSION_MAJOR = 1
+VERSION_MINOR = 0
+VERSION_PATCH = 0
+################################
+
 excel_save_file_extension = '.xlsx'
 hasLoadedFileData = False # this if used to tell if we have data in the TreeView or not for saving it when opening a new file.
 col_storage_pd = pd.DataFrame()
@@ -28,9 +35,105 @@ allow_multiple_file_uploads_bool = False
 custom_category_options = []
 
 r = tk.Tk()
+
+# Using treeview widget    
+treev = ttk.Treeview(r, height=20, selectmode ='extended')
+
+'''
+    Setting the Select Mode:
+        browse: (Default) Only one item can be selected at a time. Clicking on an item selects it and deselects any previously selected item.
+        extended: Multiple items can be selected by holding down the Shift key or Ctrl key (Command key on macOS).
+        none: Disables selection entirely.
+'''
+
+
+
+def open_export_window():
+
+    def clear_entry():
+        ent_new.delete(0, tk.END)
+
+    def edit():
+        # Get selected item to Edit
+        selected_item = categories.selection()[0]
+        text = categories.item(selected_item)['text']
+        value = categories.item(selected_item)['values'][0]
+        new_text = text.replace(str(value), ent_new.get())
+        categories.item(selected_item, text=new_text, values=(ent_new.get()))
+        clear_entry()
+
+    export_screen = tk.Toplevel(r)
+    export_screen.title("Export")
+    export_screen.minsize(width=400,height=300)
+    # Set window position (x, y)
+    export_screen.geometry("+150+150") # window position
+
+    # Add widgets to the new window here
+    tk.Label(export_screen, text="These are the export options").pack()
+    tk.Button(export_screen, text="Export").pack(side="bottom", anchor="se", padx=10, pady=10)
+
+    categories = ttk.Treeview(export_screen, height=20, selectmode ='browse')
+    categories.pack(side="left")
+
+    unique_values = []
+
+    for row in treev.get_children():
+        custom_val = treev.item(row)['values'][0]
+        print(custom_val)
+        if custom_val not in unique_values:
+            unique_values.append(custom_val)
+            str_1_head = "Category Name: " + custom_val
+            head_1 = categories.insert("", 'end', text =str_1_head, values=(custom_val))
+            child_l1 = categories.insert(head_1, 'end', text ="Budget Min: $0", values=("0"))
+            child_l2 = categories.insert(head_1, 'end', text ="Budget Max: $0", values=("0"))
+
+
+    # This will create a LabelFrame
+    label_export_options_1 = LabelFrame(export_screen, text='Export Options 1', font = "50")
+    label_export_options_1.pack(side='top', anchor='n')
+    # This will create a LabelFrame
+    label_export_sub_1 = LabelFrame(label_export_options_1, text='Export sub 1', font = "20")
+    label_export_sub_1.pack(side="left")
+    # This will create a LabelFrame
+    label_export_sub_2 = LabelFrame(label_export_options_1, text='Export sub 2', font = "20")
+    label_export_sub_2.pack(side="right")
+    check_but1 = tk.Checkbutton(label_export_sub_1, text="test1")
+    check_but2 = tk.Checkbutton(label_export_sub_2, text="test2")
+    check_but1.pack()
+    check_but2.pack()
+    # This will create a LabelFrame
+    label_export_options_2 = LabelFrame(export_screen, text='Export Options 2', font = "50")
+    label_export_options_2.pack(side='top', anchor='n')
+    # This will create a LabelFrame
+    label_export_sub_3 = LabelFrame(label_export_options_2, text='Export sub 1', font = "20")
+    label_export_sub_3.pack(side="left")
+    # This will create a LabelFrame
+    label_export_sub_4 = LabelFrame(label_export_options_2, text='Export sub 2', font = "20")
+    label_export_sub_4.pack(side="right")
+    check_but3 = tk.Checkbutton(label_export_sub_3, text="test1")
+    check_but4 = tk.Checkbutton(label_export_sub_4, text="test2")
+    check_but3.pack()
+    check_but4.pack()
+
+    # This will create a LabelFrame
+    label_export_options_3 = LabelFrame(export_screen, text='Export Options 3', font = "50")
+    label_export_options_3.pack(side='top', anchor='n')
+    # This will create a LabelFrame
+    label_export_sub_5 = LabelFrame(label_export_options_3, text='Export sub 1', font = "20")
+    label_export_sub_5.pack(side="left")
+    # This will create a LabelFrame
+    label_export_sub_6 = LabelFrame(label_export_options_3, text='Export sub 2', font = "20")
+    label_export_sub_6.pack(side="right")
+    ent_new = tk.Entry(label_export_options_3)
+    but1 = tk.Button(label_export_options_3, text="Change", command=edit)
+    ent_new.pack()
+    but1.pack()
+
 # Adjust size
 # I want it resizable so that the scrolling and the data boxes are not messed up by it.
 r.minsize(width=600,height=10)
+# Set window position (x, y)
+r.geometry("+100+100") # window position
 r.resizable(width=False, height=False)
 r.title('Budgetting App')
 
@@ -38,7 +141,11 @@ r.title('Budgetting App')
 label_frame = LabelFrame(r, text='Columns To Remove When Saved', font = "50")
 
 # This will create a LabelFrame
-label_category_selection = LabelFrame(r, text='Custom budget Category Selection', font = "50")
+label_category_selection = LabelFrame(r, text='Custom Categories', font = "50")
+# This will create a LabelFrame
+label_category_selection_add = LabelFrame(label_category_selection, text='Add Custom Category', font = "20")
+# This will create a LabelFrame
+label_category_selection_select = LabelFrame(label_category_selection, text='Set Row Category', font = "20")
 
 ButtonsN = []
 
@@ -64,15 +171,6 @@ def get_selected_tree_row_add_category():
         print(treev.item(item).get("values")[0])
 
 
-# Using treeview widget    
-treev = ttk.Treeview(r, height=20, selectmode ='extended')
-
-'''
-    Setting the Select Mode:
-        browse: (Default) Only one item can be selected at a time. Clicking on an item selects it and deselects any previously selected item.
-        extended: Multiple items can be selected by holding down the Shift key or Ctrl key (Command key on macOS).
-        none: Disables selection entirely.
-'''
 
 # Constructing vertical scrollbar
 # with treeview
@@ -97,24 +195,30 @@ treev.pack(side ='left', fill='x', anchor='nw')
 
 label_frame.pack(side='top', anchor='n', padx=20)
 label_category_selection.pack(side='bottom', anchor='s', padx=20)
+label_category_selection_add.pack(side='left')
+label_category_selection_select.pack(side='right')
 
 #adding stuff to the custom categories
-entry = ttk.Entry(label_category_selection, width = 20)
+entry = ttk.Entry(label_category_selection_add, width = 20)
 entry.pack()
 
 
+def clear_new_category_entry():
+        entry.delete(0, tk.END)
 
 def add_new_category():
     message_str = "Would you like to add the new Category \"" + entry.get() + "\" to your column category options?"
     if messagebox.askokcancel("Add New Category", message_str):
         values = list(dropdown["values"])
         dropdown["values"] = values + [entry.get()]
+        clear_new_category_entry()
 
-entry_b = ttk.Button(label_category_selection, text='Add New Label', width = 20, command=add_new_category)
+
+entry_b = ttk.Button(label_category_selection_add, text='Create New Label', width = 20, command=add_new_category)
 entry_b.pack()
-dropdown = ttk.Combobox(label_category_selection, width = 20, state="readonly")
+dropdown = ttk.Combobox(label_category_selection_select, width = 20, state="readonly")
 dropdown.pack()
-dropdown_add = ttk.Button(label_category_selection, text='Add New Label', width = 20, command=get_selected_tree_row_add_category)
+dropdown_add = ttk.Button(label_category_selection_select, text='Label Selected Row', width = 20, command=get_selected_tree_row_add_category)
 dropdown_add.pack()
  
 # Configuring treeview
@@ -217,9 +321,6 @@ def add_back_column(tree, index):
     # Remove the second column
     tree.column(treev['columns'][index], width=275, stretch=True)
     tree.heading(treev['columns'][index], text=treev['columns'][index])
-    #print(treev['columns'])
-    #removed_columns.remove(treev['columns'][index])
-    #print(removed_columns)
 
 #function to hide and reveal columns
 def remove_column(tree, index):
@@ -227,10 +328,6 @@ def remove_column(tree, index):
     # Remove the second column
     tree.column(treev['columns'][index], width=0, stretch=False)
     tree.heading(treev['columns'][index], text=removed_columns_str)
-    #print(treev['columns'])
-    #removed_columns.append(treev['columns'][index])
-    #print(removed_columns)
-
     
 # Callback function to handle the checkbox state change
 def checkbox_state_changed(index):
@@ -239,6 +336,7 @@ def checkbox_state_changed(index):
     """Callback function that gets triggered when a checkbox state changes."""
     state = check_vars[index].get()  # Get the state of the checkbox
     #print(f"Checkbox {index + 1} is {'Checked' if state else 'Unchecked'}")
+    index = index + 1 # this is becuase we are ignoring the custom column
     if state:
         #this means that the column should be removed
         #pd.concat([col_storage_pd, copy_column(index)], ignore_index=True)
@@ -311,11 +409,16 @@ def load_file():
                 try:
                     skip_add_col = row.index('Custom Category')
                 except ValueError:
-                    skip_add_col = skip_add_col
-                row = ("Custom Category",) + row
+                    pass
+                if skip_add_col < 0:
+                    row = ("Custom Category",) + row
                 treev['columns'] = (row)
                 check_vars = []
                 for i,header in enumerate(row):
+                    print(header)
+                    print(i , " vs ", True if i == 0 else False)
+                    if i == 0: # skip adding the removeal checkbox for custom column
+                        continue
                     var = IntVar()
                     
                     check_vars.append(var)
@@ -326,7 +429,7 @@ def load_file():
                         offvalue = 0, 
                         height = 2, 
                         width = 20,
-                        command=lambda index=i: checkbox_state_changed(index))
+                        command=lambda index=i-1: checkbox_state_changed(index)) # -1 because we are ignoring the custom column
                     ButtonsN.append(tempButt)
                     # Set the trace to call checkbox_state_changed whenever the variable changes
                     #var.trace_add("write", lambda var, index=i, *args: checkbox_state_changed(index))
@@ -360,7 +463,6 @@ def write_to_excel(tree, filename):
     # Create a Pandas DataFrame from the data
     df = pd.DataFrame(data, columns=[tree.heading(col, "text") for col in tree["columns"]])
 
-    #print(df)
     if len(removed_columns_str):
         try:
             df.drop(columns=removed_columns_str, axis=1, inplace=True)
@@ -384,6 +486,14 @@ def attempt_end_program():
 
 r.protocol("WM_DELETE_WINDOW", attempt_end_program)
 
+def about():
+    string_ver = "Current Version: " + str(VERSION_MAJOR) + "." + str(VERSION_MINOR) + "." + str(VERSION_PATCH) + "v"
+    messagebox.showinfo("About", string_ver)
+
+def Proper_program_usage():
+    string_ex = "The Program Intent\n\n" + "The intentbeing the way that this program functions is to allow the user to load in creditcard data and bank data and easily turn them into a graphical representation that can be viewed and explored.\n\n" + "First thing you should do when using this program is upload your bank and creditcard csv or excel files.\n" + "Then remove whatever columns are useless.\n" + "Then add a custom category to the data rows which you want to classify them all under when exported.\n" + "Finally, export the data and select the type of output you want to see when the export is complete."
+    messagebox.showinfo("How To...", string_ex)
+
 #Adding a menu Bar:
 
 def donothing():
@@ -394,6 +504,7 @@ filemenu = Menu(menubar, tearoff=0)
 filemenu.add_command(label="New", command=donothing)
 filemenu.add_command(label="Open", command=load_file)
 filemenu.add_command(label="Save", command=file_save_as)
+filemenu.add_command(label="Export", command=open_export_window)
 filemenu.add_separator()
 filemenu.add_command(label="Exit", command=attempt_end_program)
 menubar.add_cascade(label="File", menu=filemenu)
@@ -404,7 +515,7 @@ menubar.add_cascade(label="OverRide", menu=overrideMenu)
 
 helpmenu = Menu(menubar, tearoff=0)
 helpmenu.add_command(label="Help Index", command=donothing)
-helpmenu.add_command(label="About...", command=donothing)
+helpmenu.add_command(label="About...", command=about)
 menubar.add_cascade(label="Help", menu=helpmenu)
 
 r.config(menu=menubar)
