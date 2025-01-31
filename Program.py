@@ -18,6 +18,8 @@ from tkinter import Menu
 from tkinter import OptionMenu
 #TreeView data to Excel:
 import pandas as pd
+# Number checking:
+import re
 
 ################################
 #Program Version:
@@ -31,6 +33,7 @@ hasLoadedFileData = False # this if used to tell if we have data in the TreeView
 col_storage_pd = pd.DataFrame()
 wb = None
 removed_columns_str = "(REMOVED COLUMN)"
+custom_name_pattern = r"^[A-Za-z].*"
 allow_multiple_file_uploads_bool = False
 cate_add_warnings_bool = True
 custom_category_options = []
@@ -51,6 +54,7 @@ treev = ttk.Treeview(r, height=20, selectmode ='extended')
 
 def open_export_window():
     custom_col = 'custom'
+    num_col = 'num'
 
     def clear_entry():
         ent_new.delete(0, tk.END)
@@ -59,40 +63,53 @@ def open_export_window():
         return x[::-1]
 
     def edit():
+
+        #Check if we are modifying the numbers and if the input is a number:
         # Get selected item to Edit
         selected_item = categories.selection()[0]
         text = categories.item(selected_item)['text']
         value = categories.item(selected_item)['values'][0]
+
         #reverse the text and values so that we can make sure to replace the end of the data and not the beginning.
-        r_text = reverse(text)
-        r_value = reverse(value)
+        r_text = reverse(str(text))
+        r_value = reverse(str(value))
         new_text = r_text.replace(str(r_value), reverse(ent_new.get()), 1)
-        categories.item(selected_item, text=reverse(new_text), values=(ent_new.get()))
-        print(True if custom_col in categories.item(selected_item)["tags"] else False)
-        #update the custom name in the whole tree:
-        for row in treev.get_children():
-            if value == treev.item(row)['values'][0]:
-                print(treev.item(row))
-                old_values = treev.item(row)['values']
-                old_values.pop(0) # this will remove the old custom name
-                new_values = (ent_new.get(),) + tuple(old_values)
-                treev.item(row, values=new_values)
-                print(treev.item(row))
-        
-        #update the custom name in drop down menu
-        # Get the current values
-        values = list(dropdown["values"])
 
-        # Replace a specific value
-        i = values.index(value)
-        values[i] = ent_new.get()
+        if num_col in categories.item(selected_item)["tags"]:
+            if not is_number_with_two_decimals(ent_new.get()):
+                messagebox.showerror("Bad Input!", "Please verify you are entering a number that is a valid monetary value. That is a number with no more than 2 decimal places.")
+                return
+            else:
+                categories.item(selected_item, text=reverse(new_text), values=(ent_new.get()))
+                clear_entry()
+        if custom_col in categories.item(selected_item)["tags"]:
+            if len(ent_new.get()) == 0 or not re.match(custom_name_pattern, ent_new.get()):
+                messagebox.showerror("Bad Input!", "Please verify you are entering a valid non-blank custom category name which at least starts with one letter.")
+                return
+            else:
 
-        # Update the Combobox with the modified values
-        dropdown["values"] = values
-        dropdown.set("")
-        clear_entry()
+                categories.item(selected_item, text=reverse(new_text), values=(ent_new.get()))
 
-        #if categories.item(selected_item)
+                #update the custom name in the whole tree:
+                for row in treev.get_children():
+                    if value == treev.item(row)['values'][0]:
+                        old_values = treev.item(row)['values']
+                        old_values.pop(0) # this will remove the old custom name
+                        new_values = (ent_new.get(),) + tuple(old_values)
+                        treev.item(row, values=new_values)
+                        #update the custom name in drop down menu
+                # Get the current values
+                values = list(dropdown["values"])
+
+                # Replace a specific value
+                i = values.index(str(value))
+                values[i] = ent_new.get()
+
+                # Update the Combobox with the modified values
+                dropdown["values"] = values
+                dropdown.set("")
+                clear_entry()
+
 
     export_screen = tk.Toplevel(r)
     export_screen.title("Export")
@@ -111,13 +128,12 @@ def open_export_window():
 
     for row in treev.get_children():
         custom_val = treev.item(row)['values'][0]
-        print(custom_val)
         if custom_val not in unique_values:
             unique_values.append(custom_val)
             str_1_head = "Category Name: " + custom_val
             head_1 = categories.insert("", 'end', text =str_1_head, values=(custom_val), tags=custom_col)
-            child_l1 = categories.insert(head_1, 'end', text ="Budget Min: $0", values=("0"))
-            child_l2 = categories.insert(head_1, 'end', text ="Budget Max: $0", values=("0"))
+            child_l1 = categories.insert(head_1, 'end', text ="Budget Min: $0", values=("0"), tags=num_col)
+            child_l2 = categories.insert(head_1, 'end', text ="Budget Max: $0", values=("0"), tags=num_col)
 
 
     # This will create a LabelFrame
@@ -148,7 +164,7 @@ def open_export_window():
     check_but4.pack()
 
     # This will create a LabelFrame
-    label_export_options_3 = LabelFrame(export_screen, text='Export Options 3', font = "50")
+    label_export_options_3 = LabelFrame(export_screen, text='Change Custom Category Name or Min/Max Value', font = "50")
     label_export_options_3.pack(side='top', anchor='n')
     # This will create a LabelFrame
     label_export_sub_5 = LabelFrame(label_export_options_3, text='Export sub 1', font = "20")
@@ -160,6 +176,11 @@ def open_export_window():
     but1 = tk.Button(label_export_options_3, text="Change", command=edit)
     ent_new.pack()
     but1.pack()
+    check_but5 = tk.Checkbutton(label_export_sub_5, text="test1")
+    check_but6 = tk.Checkbutton(label_export_sub_6, text="test2")
+    check_but5.pack()
+    check_but6.pack()
+
 
 # Adjust size
 # I want it resizable so that the scrolling and the data boxes are not messed up by it.
@@ -187,7 +208,6 @@ check_vars = []
 
 
 def get_selected_tree_row_add_category():
-    print(len(dropdown["values"]))
     #if there have been no values added to category.
     if len(dropdown["values"]) == 0:
         return
@@ -204,7 +224,6 @@ def get_selected_tree_row_add_category():
                 new_values.append(values)'''
         
         treev.set(item=item,column=0,value=dropdown["values"][dropdown.current()])
-        print(treev.item(item).get("values")[0])
 
 
 
@@ -243,8 +262,8 @@ def clear_new_category_entry():
         entry.delete(0, tk.END)
 
 def add_new_category():
-    print(len(entry.get()))
-    if len(entry.get()) == 0:
+    if not re.match(custom_name_pattern, entry.get()):
+        messagebox.showerror("Bad Input!", "Please verify you are entering a valid non-blank custom category name which at least starts with one letter.")
         return
     message_str = "Would you like to add the new Category \"" + entry.get() + "\" to your column category options?"
     if messagebox.askokcancel("Add New Category", message_str) if cate_add_warnings_bool else True:
@@ -298,6 +317,17 @@ def is_decimal_string(input):
         return True
     else:
         return False
+
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+    
+def is_number_with_two_decimals(string):
+    pattern = r"^-?\d+(\.\d{1,2})?$"
+    return bool(re.match(pattern, string))
 
 def convert_csv_to_excel(fileName): #returns the new file name
     global excel_save_file_extension
@@ -434,7 +464,6 @@ def load_file():
             file_path = convert_csv_to_excel(file_path)
         
         # Load the workbook
-        #print(file_path)
         wb = openpyxl.load_workbook(file_path)
 
         # Select the active sheet
@@ -557,7 +586,7 @@ overrideMenu.add_checkbutton(label="Turn Off Category Addition Warnings", comman
 menubar.add_cascade(label="OverRide", menu=overrideMenu)
 
 helpmenu = Menu(menubar, tearoff=0)
-helpmenu.add_command(label="Help Index", command=donothing)
+helpmenu.add_command(label="Help Index", command=Proper_program_usage)
 helpmenu.add_command(label="About...", command=about)
 menubar.add_cascade(label="Help", menu=helpmenu)
 
