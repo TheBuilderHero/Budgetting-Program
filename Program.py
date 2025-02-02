@@ -310,11 +310,27 @@ r.geometry("+100+100") # window position
 r.resizable(width=False, height=False)
 r.title('Budgetting App')
 
-# This will create a LabelFrame
-label_frame = LabelFrame(r, text='Columns To Remove When Saved', font = "50")
+#this covers all Labels:
+data_options_label = LabelFrame(r, text='Data Options', font = "30")
+data_options_label.pack(side='left', fill='both')
+
+#category grouping label
+label_category_group = LabelFrame(data_options_label)
+label_category_group.pack(side='left')
+
+# This will create a LabelFrame to hold (Date, Description, Value)
+label_frame_date_desc_value = LabelFrame(label_category_group, text='Corresponding Columns', font = "30")
+label_frame_date = LabelFrame(label_frame_date_desc_value, text='Date Column', font = "20")
+label_frame_desc = LabelFrame(label_frame_date_desc_value, text='Description Column', font = "20")
+label_frame_value = LabelFrame(label_frame_date_desc_value, text='Value Column', font = "20")
+
+
 
 # This will create a LabelFrame
-label_category_selection = LabelFrame(r, text='Custom Categories', font = "50")
+label_frame = LabelFrame(data_options_label, text='Remove Columns', font = "50")
+
+# This will create a LabelFrame
+label_category_selection = LabelFrame(label_category_group, text='Custom Categories', font = "50")
 # This will create a LabelFrame
 label_category_selection_add = LabelFrame(label_category_selection, text='Add Custom Category', font = "20")
 # This will create a LabelFrame
@@ -367,9 +383,16 @@ horzscrlbar.pack(side='bottom', fill='x', anchor='sw')
 # Calling pack method w.r.to treeview
 treev.pack(side ='left', fill='x', anchor='nw')
 
+label_frame_date_desc_value.pack(side ='top')
 
-label_frame.pack(side='top', anchor='n', padx=20)
-label_category_selection.pack(side='bottom', anchor='s', padx=20)
+label_frame_date.pack()
+label_frame_desc.pack()
+label_frame_value.pack()
+
+label_frame.pack(side='left', anchor='e')
+
+label_category_selection.pack(side='top')
+
 label_category_selection_add.pack(side='left')
 label_category_selection_select.pack(side='right')
 
@@ -391,11 +414,84 @@ def add_new_category():
         dropdown["values"] = values + [entry.get()]
         clear_new_category_entry()
 
+date_var = tk.StringVar()
+date_prev = ""
+desc_var = tk.StringVar()
+desc_prev = ""
+value_var = tk.StringVar()
+value_prev = ""
+
+def update_date_dropdown(event):
+    global date_prev
+    if(len(date_var.get()) > 0 and not date_var.get() == date_prev):
+        try:
+            desc_options = list(dropdown_desc['values'])
+            desc_options.remove(date_var.get())
+            if not date_prev == "": desc_options.append(date_prev) 
+            dropdown_desc['values'] = desc_options
+        except ValueError:
+            pass
+        try:
+            value_options = list(dropdown_value['values'])
+            value_options.remove(date_var.get())
+            if not date_prev == "": value_options.append(date_prev) 
+            dropdown_value['values'] = value_options
+        except ValueError:
+            pass
+        
+        date_prev = date_var.get()
+def update_desc_dropdown(event):
+    global desc_prev
+    if(len(desc_var.get()) > 0 and not desc_var.get() == desc_prev):
+        try:
+            date_options = list(dropdown_date['values'])
+            date_options.remove(desc_var.get())
+            if not desc_prev == "": date_options.append(desc_prev) 
+            dropdown_date['values'] = date_options
+        except ValueError:
+            pass
+        try:
+            value_options = list(dropdown_value['values'])
+            value_options.remove(desc_var.get())
+            if not desc_prev == "": value_options.append(desc_prev) 
+            dropdown_value["values"] = value_options
+        except ValueError:
+            pass
+
+        desc_prev = desc_var.get()
+def update_value_dropdown(event):
+    global value_prev
+    if(len(value_var.get()) > 0 and not value_var.get() == value_prev):
+        try:
+            desc_options = list(dropdown_desc['values'])
+            desc_options.remove(value_var.get())
+            if not value_prev == "": desc_options.append(value_prev) 
+            dropdown_desc["values"] = desc_options
+        except ValueError:
+            pass
+        try:
+            date_options = list(dropdown_date['values'])
+            date_options.remove(value_var.get())
+            if not value_prev == "": date_options.append(value_prev) 
+            dropdown_date["values"] = date_options
+        except ValueError:
+            pass
+
+        value_prev = value_var.get()
 
 entry_b = ttk.Button(label_category_selection_add, text='Create New Label', width = 20, command=add_new_category)
 entry_b.pack()
 dropdown = ttk.Combobox(label_category_selection_select, width = 20, state="readonly")
 dropdown.pack()
+dropdown_date = ttk.Combobox(label_frame_date, width = 12, state="readonly", textvariable=date_var)
+dropdown_date.bind('<<ComboboxSelected>>', update_date_dropdown)
+dropdown_date.pack()
+dropdown_desc = ttk.Combobox(label_frame_desc, width = 12, state="readonly", textvariable=desc_var)
+dropdown_desc.bind('<<ComboboxSelected>>', update_desc_dropdown)
+dropdown_desc.pack()
+dropdown_value = ttk.Combobox(label_frame_value, width = 12, state="readonly", textvariable=value_var)
+dropdown_value.bind('<<ComboboxSelected>>', update_value_dropdown)
+dropdown_value.pack()
 dropdown_add = ttk.Button(label_category_selection_select, text='Label Selected Row', width = 20, command=get_selected_tree_row_add_category)
 dropdown_add.pack()
  
@@ -600,15 +696,20 @@ def load_file():
 
         # Read and print the data
         for row in sheet.iter_rows(min_row=1, values_only=True):
+            row_without_custom = () # this is gonna be used for the options in the dropdown boxes.
             # After the first run through row 1 we will no longer be adding columns
             if firstTimeOver is True:
                 # Defining number of columns
                 # Find the index of 'Custom Category'
                 try:
                     skip_add_col = row.index('Custom Category')
+                    temprow = row
+                    temprow.pop(0)
+                    row_without_custom = temprow
                 except ValueError:
                     pass
                 if skip_add_col < 0:
+                    row_without_custom = row
                     row = ("Custom Category",) + row
                 treev['columns'] = (row)
                 column_width_setting = int(int((init_column_width_setting * 8)) / (int(len(treev['columns'])) + 1))
@@ -628,8 +729,12 @@ def load_file():
                         width = 20,
                         command=lambda index=i-1: checkbox_state_changed(index)) # -1 because we are ignoring the custom column
                     ButtonsN.append(tempButt)
-                    # Set the trace to call checkbox_state_changed whenever the variable changes
-                    #var.trace_add("write", lambda var, index=i, *args: checkbox_state_changed(index))
+
+                #Add option to the combo boxes for the selection of categories from the list of headers
+                dropdown_date['values'] = row_without_custom
+                dropdown_desc['values'] = row_without_custom
+                dropdown_value['values'] = row_without_custom
+
                 for butt in ButtonsN:
                     butt.pack(side='top', anchor='center')
             else:
