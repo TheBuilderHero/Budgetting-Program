@@ -421,8 +421,86 @@ desc_prev = ""
 value_var = tk.StringVar()
 value_prev = ""
 
+date_add_toggle = []
+desc_add_toggle = []
+value_add_toggle = []
+
+def search_by_first_element(list_of_lists, target): #returns the boolean value associated with the target. if item is not found returns false.
+    #print(list_of_lists)
+    list_of_lists = list(list_of_lists)
+    for lis in list_of_lists:
+        if lis[0] == target:
+            return lis[1]
+    return None
+
+def add_item_toggle_list(list_of_lists, target):
+    #print(list_of_lists)
+    list_of_lists = list(list_of_lists)
+    list_of_lists.append([target,False]) # start false since it is gonna get flipped
+    return list_of_lists
+
+def flip_bool_tuple(list_of_lists, target):
+    for i in range(len(list_of_lists)):
+        if list_of_lists[i][0] == target:
+            list_of_lists[i][1] = not list_of_lists[i][1]
+    return list_of_lists
+
 def update_date_dropdown(event):
     global date_prev
+    global date_add_toggle
+    if isinstance(event,str): # if is it s string then we know it is the column we need to remove
+        #toggle the add and remove
+        evaluation_of_toggle = search_by_first_element(date_add_toggle, event)
+        if evaluation_of_toggle:
+            #if we are supposed to add. Then we add the value back into the date list
+
+            #update the toggle boolean:
+            date_add_toggle = flip_bool_tuple(date_add_toggle, event)
+
+            #first get the complete list:
+            date_options = list(dropdown_date['values'])
+
+            #then add the value to the list:
+            date_options.append(event) 
+
+            #now update the new list:
+            dropdown_date['values'] = date_options
+
+            #finally update the selected item to nothing:
+
+        else:
+            #if we are supposed to remove. Then we remove the value from the date list
+
+            if evaluation_of_toggle is None:
+                #This means that value does not exist and we need to add it to the toggle list:
+                date_add_toggle = add_item_toggle_list(date_add_toggle, event)
+
+            #update the toggle boolean:
+            date_add_toggle = flip_bool_tuple(date_add_toggle, event)
+
+            #first get the complete list:
+            date_options = list(dropdown_date['values'])
+
+            #first check if a value is selected:
+            #remove selected value:
+            try:
+                if len(date_var.get()) > 0: #this means it is not blank
+                    dropdown_date.set('')
+            except UnboundLocalError:
+                #This means that the value date_var was empty ''
+                pass
+
+            #then add the value to the list:
+            try:
+                date_options.remove(event) 
+            except ValueError:
+                pass
+
+            #now update the new list:
+            dropdown_date['values'] = date_options
+            pass
+
+        return # so not to execute the rest of the function.
     if(len(date_var.get()) > 0 and not date_var.get() == date_prev):
         try:
             desc_options = list(dropdown_desc['values'])
@@ -442,6 +520,60 @@ def update_date_dropdown(event):
         date_prev = date_var.get()
 def update_desc_dropdown(event):
     global desc_prev
+    global desc_add_toggle
+    if isinstance(event,str): # if is it s string then we know it is the column we need to remove
+        #toggle the add and remove
+        evaluation_of_toggle = search_by_first_element(desc_add_toggle, event)
+        if evaluation_of_toggle:
+            #if we are supposed to add. Then we add the value back into the date list
+
+            #update the toggle boolean:
+            desc_add_toggle = flip_bool_tuple(desc_add_toggle, event)
+
+            #first get the complete list:
+            desc_options = list(dropdown_desc['values'])
+
+            #then add the value to the list:
+            desc_options.append(event) 
+
+            #now update the new list:
+            dropdown_desc['values'] = desc_options
+
+            #finally update the selected item to nothing:
+            
+        else:
+            #if we are supposed to remove. Then we remove the value from the date list
+
+            if evaluation_of_toggle is None:
+                #This means that value does not exist and we need to add it to the toggle list:
+                desc_add_toggle = add_item_toggle_list(desc_add_toggle, event)
+
+            #update the toggle boolean:
+            desc_add_toggle = flip_bool_tuple(desc_add_toggle, event)
+
+            #first get the complete list:
+            desc_options = list(dropdown_desc['values'])
+
+            #first check if a value is selected:
+            #remove selected value:
+            try:
+                if len(desc_var.get()) > 0: #this means it is not blank
+                    dropdown_desc.set('')
+            except UnboundLocalError:
+                #This means that the value desc_var was empty ''
+                pass
+
+            #then add the value to the list:
+            try:
+                desc_options.remove(event) 
+            except ValueError:
+                pass
+
+            #now update the new list:
+            dropdown_desc['values'] = desc_options
+            pass
+
+        return # so not to execute the rest of the function.
     if(len(desc_var.get()) > 0 and not desc_var.get() == desc_prev):
         try:
             date_options = list(dropdown_date['values'])
@@ -461,6 +593,59 @@ def update_desc_dropdown(event):
         desc_prev = desc_var.get()
 def update_value_dropdown(event):
     global value_prev
+    global value_add_toggle
+    if isinstance(event,str): # if is it s string then we know it is the column we need to remove
+        #toggle the add and remove
+        evaluation_of_toggle = search_by_first_element(value_add_toggle, event)
+        if value_add_toggle:
+            #if we are supposed to add. Then we add the value back into the date list
+
+            #update the toggle boolean:
+            value_add_toggle = flip_bool_tuple(value_add_toggle, event)
+
+            #first get the complete list:
+            value_options = list(dropdown_value['values'])
+
+            #then add the value to the list:
+            value_options.append(event) 
+
+            #now update the new list:
+            dropdown_value['values'] = value_options
+
+            #finally update the selected item to nothing:
+            
+        else:
+            #if we are supposed to remove. Then we remove the value from the date list
+
+            if evaluation_of_toggle is None:
+                #This means that value does not exist and we need to add it to the toggle list:
+                value_add_toggle = add_item_toggle_list(value_add_toggle, event)
+
+            #update the toggle boolean:
+            value_add_toggle = flip_bool_tuple(value_add_toggle, event)
+
+            #first get the complete list:
+            value_options = list(dropdown_value['values'])
+
+            #first check if a value is selected:
+            try:
+                if len(value_var.get()) > 0: #this means it is not blank
+                    dropdown_value.set('')
+            except UnboundLocalError:
+                #This means that the value value_var was empty ''
+                pass
+
+            #then add the value to the list:
+            try:
+                value_options.remove(event)
+            except ValueError:
+                pass
+
+            #now update the new list:
+            dropdown_value['values'] = value_options
+            pass
+
+        return # so not to execute the rest of the function.
     if(len(value_var.get()) > 0 and not value_var.get() == value_prev):
         try:
             desc_options = list(dropdown_desc['values'])
@@ -607,13 +792,19 @@ def add_back_column(tree, index):
     # Remove the second column
     tree.column(treev['columns'][index], width=column_width_setting, stretch=False)
     tree.heading(treev['columns'][index], text=treev['columns'][index])
+    update_date_dropdown(treev['columns'][index])
+    update_desc_dropdown(treev['columns'][index])
+    update_value_dropdown(treev['columns'][index])
 
-#function to hide and reveal columns
+#function to hide and reveal columns along with remove them from the dropdown menus:
 def remove_column(tree, index):
     global removed_columns_str
     # Remove the second column
     tree.column(treev['columns'][index], width=0, stretch=False)
     tree.heading(treev['columns'][index], text=removed_columns_str)
+    update_date_dropdown(treev['columns'][index])
+    update_desc_dropdown(treev['columns'][index])
+    update_value_dropdown(treev['columns'][index])
     
 # Callback function to handle the checkbox state change
 def checkbox_state_changed(index):
