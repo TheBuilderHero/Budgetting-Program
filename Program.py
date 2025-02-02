@@ -17,6 +17,7 @@ import os # file extension removal
 from tkinter import Menu
 from tkinter import OptionMenu
 #TreeView data to Excel:
+import openpyxl.styles
 import pandas as pd
 # Number checking:
 import re
@@ -37,11 +38,17 @@ custom_name_pattern = r"^[A-Za-z].*"
 allow_multiple_file_uploads_bool = False
 cate_add_warnings_bool = True
 custom_category_options = []
+init_column_width_setting = 125
+column_width_setting = 125 # this is modified later to be dynamic per the culumn header count.
 
 r = tk.Tk()
 
+
+#r.maxsize(width=1800, height=1800)
+
 # Using treeview widget    
 treev = ttk.Treeview(r, height=20, selectmode ='extended')
+
 
 '''
     Setting the Select Mode:
@@ -55,12 +62,93 @@ treev = ttk.Treeview(r, height=20, selectmode ='extended')
 def open_export_window():
     custom_col = 'custom'
     num_col = 'num'
+    check_but1_var = IntVar()
+    check_but2_var = IntVar()
+
 
     def clear_entry():
         ent_new.delete(0, tk.END)
 
     def reverse(x):
         return x[::-1]
+    
+    def initiate_export():
+        # Check if at least one of the checkboxes are checked. Needed for export.
+        if not check_but1_var.get() and not check_but2_var.get():
+            messagebox.showwarning("Option Selection!", "Please verify that you have selected at least one of the options for export sheets.", parent=export_screen)
+            return
+
+        wbExport = openpyxl.Workbook()
+
+        
+        #Create list of 'id's
+        listOfEntriesInTreeView=categories.get_children()
+
+        if check_but1_var.get(): #get the state
+            #export the summary
+            pass
+        else:
+            #do not export the summary
+            pass
+
+        if check_but2_var.get(): #get the state
+            #List of months for worksheet titles
+            months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                    'July', 'August', 'September', 'October', 'November', 'December']
+
+            # Create a worksheet for each month
+            for month in months:
+                first_num = True
+                temp_ws = wbExport.create_sheet(title=month)
+                for i , data in enumerate(listOfEntriesInTreeView):  
+                    cell_str = ""
+                    i = i + 1 + 1 # +1 because values have to start at 1 and not 0 and also want to add one more for the items not at the top.
+                    # Add column headers
+                    #if custom_col in categories.item(data)["tags"]:
+                    #print(categories.item(data)['values'][0])
+                    cell_str = "A" + str(i)
+
+                    # Now you can apply your styles and alignment
+                    # Change font style
+                    temp_ws[cell_str].font = openpyxl.styles.Font(size=16, bold=True, color="FF0000")
+
+                    # Align text
+                    temp_ws[cell_str].alignment = openpyxl.styles.Alignment(horizontal="center")
+                    temp_ws[cell_str] = str(categories.item(data)['values'][0])
+
+                    #Now we have to add the numbers to the sheet:
+                    
+                    num_children = categories.get_children(data)
+                    for i2 , data in enumerate(num_children):
+                        if first_num:
+                            cell_str = "B" + str(i)
+                            first_num = False
+                        else:
+                            cell_str = "C" + str(i)
+                            first_num = True
+
+                        #print(categories.item(data)['values'][0])
+                        
+
+                        # Now you can apply your styles and alignment
+                        # Change font style
+                        temp_ws[cell_str].font = openpyxl.styles.Font(size=12, bold=False, color="03fc6f")
+
+                        # Align text
+                        temp_ws[cell_str].alignment = openpyxl.styles.Alignment(horizontal='right')
+                        temp_ws[cell_str] = str(categories.item(data)['values'][0])
+        else:
+            #do not export the monthly
+            pass
+        
+
+        # Remove the default sheet
+        del wbExport['Sheet']
+
+        # Save the workbook
+        wbExport.save("MonthlyExpenses.xlsx")
+        print("Workbook created with a sheet for each month.")
+
 
     def edit():
 
@@ -117,9 +205,12 @@ def open_export_window():
     # Set window position (x, y)
     export_screen.geometry("+150+150") # window position
 
+    #Force this window to be at top and stay on top:
+    export_screen.attributes("-topmost", True)
+
     # Add widgets to the new window here
     tk.Label(export_screen, text="These are the export options").pack()
-    tk.Button(export_screen, text="Export").pack(side="bottom", anchor="se", padx=10, pady=10)
+    tk.Button(export_screen, text="Export", command=initiate_export).pack(side="bottom", anchor="se", padx=10, pady=10)
 
     categories = ttk.Treeview(export_screen, height=20, selectmode ='browse')
     categories.pack(side="left")
@@ -128,7 +219,7 @@ def open_export_window():
 
     for row in treev.get_children():
         custom_val = treev.item(row)['values'][0]
-        if custom_val not in unique_values:
+        if custom_val.strip() not in unique_values and not custom_val.strip() == "":
             unique_values.append(custom_val)
             str_1_head = "Category Name: " + custom_val
             head_1 = categories.insert("", 'end', text =str_1_head, values=(custom_val), tags=custom_col)
@@ -137,19 +228,32 @@ def open_export_window():
 
 
     # This will create a LabelFrame
-    label_export_options_1 = LabelFrame(export_screen, text='Export Options 1', font = "50")
+    label_export_options_1 = LabelFrame(export_screen, text='Export Pages', font = "50")
     label_export_options_1.pack(side='top', anchor='n')
     # This will create a LabelFrame
-    label_export_sub_1 = LabelFrame(label_export_options_1, text='Export sub 1', font = "20")
-    label_export_sub_1.pack(side="left")
+    #label_export_sub_1 = LabelFrame(label_export_options_1, text='Create Summary Page', font = "20")
+    #label_export_sub_1.pack(side="left")
     # This will create a LabelFrame
-    label_export_sub_2 = LabelFrame(label_export_options_1, text='Export sub 2', font = "20")
-    label_export_sub_2.pack(side="right")
-    check_but1 = tk.Checkbutton(label_export_sub_1, text="test1")
-    check_but2 = tk.Checkbutton(label_export_sub_2, text="test2")
+    #label_export_sub_2 = LabelFrame(label_export_options_1, text='Create Monthly Pages', font = "20")
+    #label_export_sub_2.pack(side="right")
+    check_but1 = tk.Checkbutton(label_export_options_1, text="Create Summary Page", 
+                        variable = check_but1_var, 
+                        onvalue = 1, 
+                        offvalue = 0 
+                        #height = 2, 
+                        #width = 20,
+                        )
+    check_but2 = tk.Checkbutton(label_export_options_1, text="Create Monthly Pages", 
+                        variable = check_but2_var, 
+                        onvalue = 1, 
+                        offvalue = 0 
+                        #height = 2, 
+                        #width = 20,
+                        )
     check_but1.pack()
     check_but2.pack()
-    # This will create a LabelFrame
+
+    '''# This will create a LabelFrame
     label_export_options_2 = LabelFrame(export_screen, text='Export Options 2', font = "50")
     label_export_options_2.pack(side='top', anchor='n')
     # This will create a LabelFrame
@@ -161,7 +265,7 @@ def open_export_window():
     check_but3 = tk.Checkbutton(label_export_sub_3, text="test1")
     check_but4 = tk.Checkbutton(label_export_sub_4, text="test2")
     check_but3.pack()
-    check_but4.pack()
+    check_but4.pack()'''
 
     # This will create a LabelFrame
     label_export_options_3 = LabelFrame(export_screen, text='Change Custom Category Name or Min/Max Value', font = "50")
@@ -176,10 +280,13 @@ def open_export_window():
     but1 = tk.Button(label_export_options_3, text="Change", command=edit)
     ent_new.pack()
     but1.pack()
+
+    '''
     check_but5 = tk.Checkbutton(label_export_sub_5, text="test1")
     check_but6 = tk.Checkbutton(label_export_sub_6, text="test2")
     check_but5.pack()
     check_but6.pack()
+    '''
 
 
 # Adjust size
@@ -386,9 +493,10 @@ def file_save_as():
 
 #function to hide and reveal columns
 def add_back_column(tree, index):
+    global column_width_setting
     global removed_columns_str # this was a string but now is just a heading
     # Remove the second column
-    tree.column(treev['columns'][index], width=275, stretch=True)
+    tree.column(treev['columns'][index], width=column_width_setting, stretch=False)
     tree.heading(treev['columns'][index], text=treev['columns'][index])
 
 #function to hide and reveal columns
@@ -433,6 +541,8 @@ def allow_multiple_file_uploads():
 
 
 def load_file():
+    global column_width_setting
+    global init_column_width_setting
     global hasLoadedFileData
     global check_vars
     global ButtonsN
@@ -473,6 +583,8 @@ def load_file():
         skip_add_col = -1
         #columnsInTree = ()
 
+
+
         # Read and print the data
         for row in sheet.iter_rows(min_row=1, values_only=True):
             # After the first run through row 1 we will no longer be adding columns
@@ -486,6 +598,7 @@ def load_file():
                 if skip_add_col < 0:
                     row = ("Custom Category",) + row
                 treev['columns'] = (row)
+                column_width_setting = int(int((init_column_width_setting * 8)) / (int(len(treev['columns'])) + 1))
                 check_vars = []
                 for i,header in enumerate(row):
                     if i == 0: # skip adding the removeal checkbox for custom column
@@ -512,7 +625,7 @@ def load_file():
             for i,col in enumerate(row):
                 if firstTimeOver is True:
                     # Assigning the heading names to the respective columns
-                    treev.column(str(i))
+                    treev.column(str(i), width=column_width_setting, stretch=False)
                     treev.heading(column=str(i), text=col)
             
             firstTimeOver = False # After the first run through row 1 we will no longer be adding columns
