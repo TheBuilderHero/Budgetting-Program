@@ -62,6 +62,8 @@ treev = ttk.Treeview(r, height=20, selectmode ='extended')
 def open_export_window():
     custom_col = 'custom'
     num_col = 'num'
+    custom_col_month = 'month_num_head'
+    custom_col_year = 'year_num_head'
     check_but1_var = IntVar()
     check_but2_var = IntVar()
 
@@ -100,43 +102,50 @@ def open_export_window():
             for month in months:
                 first_num = True
                 temp_ws = wbExport.create_sheet(title=month)
-                for i , data in enumerate(listOfEntriesInTreeView):  
-                    cell_str = ""
-                    i = i + 1 + 1 # +1 because values have to start at 1 and not 0 and also want to add one more for the items not at the top.
-                    # Add column headers
-                    #if custom_col in categories.item(data)["tags"]:
-                    #print(categories.item(data)['values'][0])
-                    cell_str = "A" + str(i)
+                for i_head, each_category in enumerate(listOfEntriesInTreeView):  
+                    # taking the two children: year, month we need to get the children of those and pull the numbers.
+                    year_or_month = categories.get_children(each_category)
+                    for i, nums_data_head in enumerate(year_or_month):
 
-                    # Now you can apply your styles and alignment
-                    # Change font style
-                    temp_ws[cell_str].font = openpyxl.styles.Font(size=16, bold=True, color="FF0000")
+                        if custom_col_month in categories.item(nums_data_head)["tags"]:
+                            cell_str = ""
+                            i_head = i_head + 1 + 1 # +1 because values have to start at 1 and not 0 and also want to add one more for the items not at the top.
+                            # Add column headers
+                            #if custom_col in categories.item(data)["tags"]:
+                            #print(categories.item(data)['values'][0])
+                            cell_str = "A" + str(i_head)
 
-                    # Align text
-                    temp_ws[cell_str].alignment = openpyxl.styles.Alignment(horizontal="center")
-                    temp_ws[cell_str] = str(categories.item(data)['values'][0])
+                            # Now you can apply your styles and alignment
+                            # Change font style
+                            temp_ws[cell_str].font = openpyxl.styles.Font(size=16, bold=True, color="FF0000")
 
-                    #Now we have to add the numbers to the sheet:
-                    
-                    num_children = categories.get_children(data)
-                    for i2 , data in enumerate(num_children):
-                        if first_num:
-                            cell_str = "B" + str(i)
-                            first_num = False
-                        else:
-                            cell_str = "C" + str(i)
-                            first_num = True
+                            # Align text
+                            temp_ws[cell_str].alignment = openpyxl.styles.Alignment(horizontal="center")
+                            temp_ws[cell_str] = str(categories.item(each_category)['values'][0])
 
-                        #print(categories.item(data)['values'][0])
-                        
+                            #Now we have to add the numbers to the sheet:
+                            
+                            num_children = categories.get_children(nums_data_head)
+                            for i2 , data in enumerate(num_children):
+                                if first_num:
+                                    cell_str = "B" + str(i_head)
+                                    first_num = False
+                                else:
+                                    cell_str = "C" + str(i_head)
+                                    first_num = True
 
-                        # Now you can apply your styles and alignment
-                        # Change font style
-                        temp_ws[cell_str].font = openpyxl.styles.Font(size=12, bold=False, color="03fc6f")
+                                #print(categories.item(data)['values'][0])
+                                
 
-                        # Align text
-                        temp_ws[cell_str].alignment = openpyxl.styles.Alignment(horizontal='right')
-                        temp_ws[cell_str] = str(categories.item(data)['values'][0])
+                                # Now you can apply your styles and alignment
+                                # Change font style
+                                temp_ws[cell_str].font = openpyxl.styles.Font(size=12, bold=False, color="03fc6f")
+
+                                # Align text
+                                temp_ws[cell_str].alignment = openpyxl.styles.Alignment(horizontal='right')
+                                temp_ws[cell_str] = str(categories.item(data)['values'][0])
+                        if custom_col_year:
+                            pass                    
         else:
             #do not export the monthly
             pass
@@ -223,8 +232,12 @@ def open_export_window():
             unique_values.append(custom_val)
             str_1_head = "Category Name: " + custom_val
             head_1 = categories.insert("", 'end', text =str_1_head, values=(custom_val), tags=custom_col)
-            child_l1 = categories.insert(head_1, 'end', text ="Budget Min: $0", values=("0"), tags=num_col)
-            child_l2 = categories.insert(head_1, 'end', text ="Budget Max: $0", values=("0"), tags=num_col)
+            child_head_m = categories.insert(head_1, 'end', text ="Monthly", values=("0"), tags=custom_col_month)
+            child_head_y = categories.insert(head_1, 'end', text ="Yearly", values=("0"), tags=custom_col_year)
+            child_m1 = categories.insert(child_head_m, 'end', text ="Budget Min: $0", values=("0"), tags=num_col)
+            child_m2 = categories.insert(child_head_m, 'end', text ="Budget Max: $0", values=("0"), tags=num_col)
+            child_y1 = categories.insert(child_head_y, 'end', text ="Budget Min: $0", values=("0"), tags=num_col)
+            child_y2 = categories.insert(child_head_y, 'end', text ="Budget Max: $0", values=("0"), tags=num_col)
 
 
     # This will create a LabelFrame
