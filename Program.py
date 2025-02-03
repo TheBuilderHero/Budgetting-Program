@@ -485,7 +485,21 @@ def update_date_dropdown(event):
             #remove selected value:
             try:
                 if len(date_var.get()) > 0: #this means it is not blank
-                    dropdown_date.set('')
+                    print("len: ", len(date_var.get()))
+                    #check if the value is the column selected for deletion:
+                    if event == date_var.get():
+                        dropdown_date.set('')
+                    '''else:
+                        # we need to add the value back to all dropdowns
+                        desc_options = list(dropdown_desc['values'])
+                        value_options = list(dropdown_value['values'])
+
+                        date_options.append(date_var.get())
+                        desc_options.append(date_var.get())
+                        value_options.append(date_var.get())
+                        
+                        dropdown_desc['values'] = desc_options
+                        dropdown_value['values'] = value_options'''
             except UnboundLocalError:
                 #This means that the value date_var was empty ''
                 pass
@@ -558,7 +572,21 @@ def update_desc_dropdown(event):
             #remove selected value:
             try:
                 if len(desc_var.get()) > 0: #this means it is not blank
-                    dropdown_desc.set('')
+                    print("len: ", len(desc_var.get()))
+                    #check if the value is the column selected for deletion:
+                    if event == desc_var.get():
+                        dropdown_desc.set('')
+                    '''else:
+                        # we need to add the value back to all dropdowns
+                        date_options = list(dropdown_date['values'])
+                        value_options = list(dropdown_value['values'])
+
+                        date_options.append(desc_var.get())
+                        desc_options.append(desc_var.get())
+                        value_options.append(desc_var.get())
+                        
+                        dropdown_date['values'] = date_options
+                        dropdown_value['values'] = value_options'''
             except UnboundLocalError:
                 #This means that the value desc_var was empty ''
                 pass
@@ -597,7 +625,7 @@ def update_value_dropdown(event):
     if isinstance(event,str): # if is it s string then we know it is the column we need to remove
         #toggle the add and remove
         evaluation_of_toggle = search_by_first_element(value_add_toggle, event)
-        if value_add_toggle:
+        if evaluation_of_toggle:
             #if we are supposed to add. Then we add the value back into the date list
 
             #update the toggle boolean:
@@ -630,7 +658,21 @@ def update_value_dropdown(event):
             #first check if a value is selected:
             try:
                 if len(value_var.get()) > 0: #this means it is not blank
-                    dropdown_value.set('')
+                    print("len: ", len(value_var.get()))
+                    #check if the value is the column selected for deletion:
+                    if event == value_var.get():
+                        dropdown_value.set('')
+                    '''else:
+                        # we need to add the value back to all dropdowns
+                        date_options = list(dropdown_date['values'])
+                        desc_options = list(dropdown_desc['values'])
+
+                        date_options.append(value_var.get())
+                        desc_options.append(value_var.get())
+                        value_options.append(value_var.get())
+                        
+                        dropdown_date['values'] = date_options
+                        dropdown_desc['values'] = desc_options'''
             except UnboundLocalError:
                 #This means that the value value_var was empty ''
                 pass
