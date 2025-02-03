@@ -67,12 +67,19 @@ def open_export_window():
     check_but1_var = IntVar()
     check_but2_var = IntVar()
 
+    export_date_column = date_var.get()
+    export_desc_column = desc_var.get()
+    export_value_column = value_var.get()
+
 
     def clear_entry():
         ent_new.delete(0, tk.END)
 
     def reverse(x):
         return x[::-1]
+    
+    def calculate_custom_category_totals():
+        return 0
     
     def initiate_export():
         # Check if at least one of the checkboxes are checked. Needed for export.
@@ -234,10 +241,15 @@ def open_export_window():
             head_1 = categories.insert("", 'end', text =str_1_head, values=(custom_val), tags=custom_col)
             child_head_m = categories.insert(head_1, 'end', text ="Monthly", values=("0"), tags=custom_col_month)
             child_head_y = categories.insert(head_1, 'end', text ="Yearly", values=("0"), tags=custom_col_year)
-            child_m1 = categories.insert(child_head_m, 'end', text ="Budget Min: $0", values=("0"), tags=num_col)
-            child_m2 = categories.insert(child_head_m, 'end', text ="Budget Max: $0", values=("0"), tags=num_col)
-            child_y1 = categories.insert(child_head_y, 'end', text ="Budget Min: $0", values=("0"), tags=num_col)
-            child_y2 = categories.insert(child_head_y, 'end', text ="Budget Max: $0", values=("0"), tags=num_col)
+            child_m1 = categories.insert(child_head_m, 'end', text ="Budget Current: $0", values=("0"), tags=num_col)
+            child_m2 = categories.insert(child_head_m, 'end', text ="Budget Allocated: $0", values=("0"), tags=num_col)
+            child_y1 = categories.insert(child_head_y, 'end', text ="Budget Current: $0", values=("0"), tags=num_col)
+            child_y2 = categories.insert(child_head_y, 'end', text ="Budget Allocated: $0", values=("0"), tags=num_col)
+    for row in treev.get_children():
+        #We need to add the code for going through the whole data set and adding up all the values labeled in a given custom column.
+        # but before we do that we need to make the value column essential along with maybe the date and description column. So make them all need to not be null in value.
+        pass
+
 
 
     # This will create a LabelFrame
@@ -489,17 +501,6 @@ def update_date_dropdown(event):
                     #check if the value is the column selected for deletion:
                     if event == date_var.get():
                         dropdown_date.set('')
-                    '''else:
-                        # we need to add the value back to all dropdowns
-                        desc_options = list(dropdown_desc['values'])
-                        value_options = list(dropdown_value['values'])
-
-                        date_options.append(date_var.get())
-                        desc_options.append(date_var.get())
-                        value_options.append(date_var.get())
-                        
-                        dropdown_desc['values'] = desc_options
-                        dropdown_value['values'] = value_options'''
             except UnboundLocalError:
                 #This means that the value date_var was empty ''
                 pass
@@ -576,17 +577,6 @@ def update_desc_dropdown(event):
                     #check if the value is the column selected for deletion:
                     if event == desc_var.get():
                         dropdown_desc.set('')
-                    '''else:
-                        # we need to add the value back to all dropdowns
-                        date_options = list(dropdown_date['values'])
-                        value_options = list(dropdown_value['values'])
-
-                        date_options.append(desc_var.get())
-                        desc_options.append(desc_var.get())
-                        value_options.append(desc_var.get())
-                        
-                        dropdown_date['values'] = date_options
-                        dropdown_value['values'] = value_options'''
             except UnboundLocalError:
                 #This means that the value desc_var was empty ''
                 pass
@@ -662,17 +652,6 @@ def update_value_dropdown(event):
                     #check if the value is the column selected for deletion:
                     if event == value_var.get():
                         dropdown_value.set('')
-                    '''else:
-                        # we need to add the value back to all dropdowns
-                        date_options = list(dropdown_date['values'])
-                        desc_options = list(dropdown_desc['values'])
-
-                        date_options.append(value_var.get())
-                        desc_options.append(value_var.get())
-                        value_options.append(value_var.get())
-                        
-                        dropdown_date['values'] = date_options
-                        dropdown_desc['values'] = desc_options'''
             except UnboundLocalError:
                 #This means that the value value_var was empty ''
                 pass
