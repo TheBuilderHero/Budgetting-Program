@@ -81,6 +81,12 @@ def open_export_window():
     def calculate_custom_category_totals():
         return 0
     
+    def get_column_index(tree, column_heading):
+        for i, col in enumerate(tree["columns"]):
+            if tree.heading(col)["text"] == column_heading:
+                return i
+        return None  # Column heading not found
+    
     def initiate_export():
         # Check if at least one of the checkboxes are checked. Needed for export.
         if not check_but1_var.get() and not check_but2_var.get():
@@ -233,6 +239,29 @@ def open_export_window():
 
     unique_values = []
 
+    df = pd.DataFrame(columns = ['Category' , 'Date', 'Description' , 'Value'])
+
+    head_row = treev.get_children()[0]
+
+    for row in treev.get_children():
+        #We need to add the code for going through the whole data set and adding up all the values labeled in a given custom column.
+        # but before we do that we need to make the value column essential along with maybe the date and description column. So make them all need to not be null in value.
+
+        index_date = get_column_index(treev, date_var.get())
+        index_desc = get_column_index(treev, desc_var.get())
+        index_value = get_column_index(treev, value_var.get())
+
+        # get data:
+        category_data = treev.item(row)['values'][0]
+        date_data = treev.item(row)['values'][index_date]
+        desc_data = treev.item(row)['values'][index_desc]
+        value_data = treev.item(row)['values'][index_value]
+
+        #now place the values into the tree based on their index positions in the treeview.
+        df.loc[len(df)] = [category_data, date_data, desc_data, value_data]
+        pass
+
+    print (df)
     for row in treev.get_children():
         custom_val = treev.item(row)['values'][0]
         if custom_val.strip() not in unique_values and not custom_val.strip() == "":
@@ -245,11 +274,6 @@ def open_export_window():
             child_m2 = categories.insert(child_head_m, 'end', text ="Budget Allocated: $0", values=("0"), tags=num_col)
             child_y1 = categories.insert(child_head_y, 'end', text ="Budget Current: $0", values=("0"), tags=num_col)
             child_y2 = categories.insert(child_head_y, 'end', text ="Budget Allocated: $0", values=("0"), tags=num_col)
-    for row in treev.get_children():
-        #We need to add the code for going through the whole data set and adding up all the values labeled in a given custom column.
-        # but before we do that we need to make the value column essential along with maybe the date and description column. So make them all need to not be null in value.
-        pass
-
 
 
     # This will create a LabelFrame
@@ -497,7 +521,6 @@ def update_date_dropdown(event):
             #remove selected value:
             try:
                 if len(date_var.get()) > 0: #this means it is not blank
-                    print("len: ", len(date_var.get()))
                     #check if the value is the column selected for deletion:
                     if event == date_var.get():
                         dropdown_date.set('')
