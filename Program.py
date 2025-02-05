@@ -21,6 +21,8 @@ import openpyxl.styles
 import pandas as pd
 # Number checking:
 import re
+#for the month conversion:
+import datetime
 
 ################################
 #Program Version:
@@ -60,10 +62,12 @@ treev = ttk.Treeview(r, height=20, selectmode ='extended')
 
 
 def open_export_window():
-    custom_col = 'custom'
-    num_col = 'num'
-    custom_col_month = 'month_num_head'
-    custom_col_year = 'year_num_head'
+    CATEGORY = 'Category'
+    DATE = 'Date'
+    DESCIPTION = 'Description'
+    VALUE = 'Value'
+    MONTH_TAG = 'month_num_head'
+    YEAR_TAG = 'year_num_head'
     check_but1_var = IntVar()
     check_but2_var = IntVar()
 
@@ -120,11 +124,11 @@ def open_export_window():
                     year_or_month = categories.get_children(each_category)
                     for i, nums_data_head in enumerate(year_or_month):
 
-                        if custom_col_month in categories.item(nums_data_head)["tags"]:
+                        if MONTH_TAG in categories.item(nums_data_head)["tags"]:
                             cell_str = ""
                             i_head = i_head + 1 + 1 # +1 because values have to start at 1 and not 0 and also want to add one more for the items not at the top.
                             # Add column headers
-                            #if custom_col in categories.item(data)["tags"]:
+                            #if CATEGORY in categories.item(data)["tags"]:
                             #print(categories.item(data)['values'][0])
                             cell_str = "A" + str(i_head)
 
@@ -157,7 +161,7 @@ def open_export_window():
                                 # Align text
                                 temp_ws[cell_str].alignment = openpyxl.styles.Alignment(horizontal='right')
                                 temp_ws[cell_str] = str(categories.item(data)['values'][0])
-                        if custom_col_year:
+                        if YEAR_TAG:
                             pass                    
         else:
             #do not export the monthly
@@ -185,14 +189,14 @@ def open_export_window():
         r_value = reverse(str(value))
         new_text = r_text.replace(str(r_value), reverse(ent_new.get()), 1)
 
-        if num_col in categories.item(selected_item)["tags"]:
+        if VALUE in categories.item(selected_item)["tags"]:
             if not is_number_with_two_decimals(ent_new.get()):
                 messagebox.showerror("Bad Input!", "Please verify you are entering a number that is a valid monetary value. That is a number with no more than 2 decimal places.")
                 return
             else:
                 categories.item(selected_item, text=reverse(new_text), values=(ent_new.get()))
                 clear_entry()
-        if custom_col in categories.item(selected_item)["tags"]:
+        if CATEGORY in categories.item(selected_item)["tags"]:
             if len(ent_new.get()) == 0 or not re.match(custom_name_pattern, ent_new.get()):
                 messagebox.showerror("Bad Input!", "Please verify you are entering a valid non-blank custom category name which at least starts with one letter.")
                 return
@@ -238,6 +242,8 @@ def open_export_window():
     categories.pack(side="left")
 
     unique_values = []
+    monthly_value = []
+    yearly_value = 0
 
     df = pd.DataFrame(columns = ['Category' , 'Date', 'Description' , 'Value'])
 
@@ -261,19 +267,59 @@ def open_export_window():
         df.loc[len(df)] = [category_data, date_data, desc_data, value_data]
         pass
 
-    print (df)
-    for row in treev.get_children():
-        custom_val = treev.item(row)['values'][0]
-        if custom_val.strip() not in unique_values and not custom_val.strip() == "":
-            unique_values.append(custom_val)
-            str_1_head = "Category Name: " + custom_val
-            head_1 = categories.insert("", 'end', text =str_1_head, values=(custom_val), tags=custom_col)
-            child_head_m = categories.insert(head_1, 'end', text ="Monthly", values=("0"), tags=custom_col_month)
-            child_head_y = categories.insert(head_1, 'end', text ="Yearly", values=("0"), tags=custom_col_year)
-            child_m1 = categories.insert(child_head_m, 'end', text ="Budget Current: $0", values=("0"), tags=num_col)
-            child_m2 = categories.insert(child_head_m, 'end', text ="Budget Allocated: $0", values=("0"), tags=num_col)
-            child_y1 = categories.insert(child_head_y, 'end', text ="Budget Current: $0", values=("0"), tags=num_col)
-            child_y2 = categories.insert(child_head_y, 'end', text ="Budget Allocated: $0", values=("0"), tags=num_col)
+    # Get the month to month data:
+    months_df = pd.DataFrame(columns=['Month','Value'])
+    months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                    'July', 'August', 'September', 'October', 'November', 'December']
+    months_value = [0,0,0,0,0,
+                    0,0,0,0,0,
+                    0,0]
+    
+    # Convert the 'Date' column to datetime format
+    df['Date'] = pd.to_datetime(df['Date'])
+    #add the month column to the dataframe:
+    df['Month'] = df['Date'].dt.month_name()
+    
+    for index, row in df.iterrows():
+        for month in months:
+            d_a_t_e = row['Month']
+            print(d_a_t_e)
+            print(month)
+            if month == row['Month']:
+                #print(month, row['Month'], month == row['Month']))
+
+                for distinguishable in pd.unique(df['Category']):
+                    #print(distinguishable, df['Category'], distinguishable == df['Category'])
+                    
+                    if row['Category'] == distinguishable:
+                        months_value[list(row).index(row['Month'])] = months_value[list(row).index(row['Month'])] + float(row['Value'])
+                        print(months_value[list(row).index(row['Month'])])
+
+    for i,month in enumerate(months):
+        #new_row = pd.DataFrame({month:months_value[i]})
+        # Converting to the dataframe 
+        new_row = pd.DataFrame({'Month': [month],'Value': [months_value[i]]})
+        months_df.loc[len(months_df)] = [month,months_value[i]]
+        print(months_df)
+        #pd.concat([months_df,new_row], ignore_index=True)
+
+    #print (df)
+    for index, unique in enumerate(pd.unique(df['Category'])):
+        if unique not in unique_values and not unique == "":
+            # Calculate the average of 'col1' ignoring 0 values
+            print(months_df['Value'])
+            average = months_df[months_df['Value'] != 0]['Value'].mean()
+
+            monthly_string = "Budget Current: $" + str(average)
+            unique_values.append(unique)
+            str_1_head = "Category Name: " + row['Category']
+            head_1 = categories.insert("", 'end', text =str_1_head, values=(row['Category']), tags=CATEGORY)
+            child_head_m = categories.insert(head_1, 'end', text ="Monthly", values=("0"), tags=MONTH_TAG)
+            child_head_y = categories.insert(head_1, 'end', text ="Yearly", values=("0"), tags=YEAR_TAG)
+            child_m1 = categories.insert(child_head_m, 'end', text =monthly_string, values=("0"), tags=VALUE)
+            child_m2 = categories.insert(child_head_m, 'end', text ="Budget Allocated: $0", values=("0"), tags=VALUE)
+            child_y1 = categories.insert(child_head_y, 'end', text ="Budget Current: $0", values=("0"), tags=VALUE)
+            child_y2 = categories.insert(child_head_y, 'end', text ="Budget Allocated: $0", values=("0"), tags=VALUE)
 
 
     # This will create a LabelFrame
@@ -596,7 +642,6 @@ def update_desc_dropdown(event):
             #remove selected value:
             try:
                 if len(desc_var.get()) > 0: #this means it is not blank
-                    print("len: ", len(desc_var.get()))
                     #check if the value is the column selected for deletion:
                     if event == desc_var.get():
                         dropdown_desc.set('')
@@ -671,7 +716,6 @@ def update_value_dropdown(event):
             #first check if a value is selected:
             try:
                 if len(value_var.get()) > 0: #this means it is not blank
-                    print("len: ", len(value_var.get()))
                     #check if the value is the column selected for deletion:
                     if event == value_var.get():
                         dropdown_value.set('')
