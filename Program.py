@@ -238,8 +238,14 @@ def open_export_window():
     tk.Label(export_screen, text="These are the export options").pack()
     tk.Button(export_screen, text="Export", command=initiate_export).pack(side="bottom", anchor="se", padx=10, pady=10)
 
-    categories = ttk.Treeview(export_screen, height=20, selectmode ='browse')
+    categories = ttk.Treeview(export_screen, height=20, selectmode ='browse', columns=("Budget"))
+    categories.heading("#0", text='Budget Data')
+    categories.column('#0', minwidth=100, width=300, stretch=True)
     categories.pack(side="left")
+
+    # Get the number of columns
+    test = categories["columns"]
+    num_columns = len(categories["columns"])
 
     unique_values = []
     monthly_value = []
@@ -269,48 +275,50 @@ def open_export_window():
 
     # Get the month to month data:
     months_df = pd.DataFrame(columns=['Month','Value'])
+    category_per_month_value_df = pd.DataFrame(columns=['Category','Month_Values_List'])
     months = ['January', 'February', 'March', 'April', 'May', 'June', 
                     'July', 'August', 'September', 'October', 'November', 'December']
     months_value = [0,0,0,0,0,
                     0,0,0,0,0,
                     0,0]
+
+    for distinguishable in pd.unique(df['Category']):
+        new_row = pd.DataFrame({'Category':[distinguishable],'Month_Values_List':[months_value]})
+        #category_per_month_value_df[len(category_per_month_value_df)] = new_row
+        category_per_month_value_df = pd.concat([category_per_month_value_df, new_row], sort=False, ignore_index=True)
+
+    print(category_per_month_value_df)
     
     # Convert the 'Date' column to datetime format
-    df['Date'] = pd.to_datetime(df['Date'])
+    df['Date'] = pd.to_datetime(df['Date'], format='mixed')
     #add the month column to the dataframe:
     df['Month'] = df['Date'].dt.month_name()
     
     for index, row in df.iterrows():
         for month in months:
             d_a_t_e = row['Month']
-            print(d_a_t_e)
-            print(month)
             if month == row['Month']:
-                #print(month, row['Month'], month == row['Month']))
-
                 for distinguishable in pd.unique(df['Category']):
-                    #print(distinguishable, df['Category'], distinguishable == df['Category'])
-                    
                     if row['Category'] == distinguishable:
-                        months_value[list(row).index(row['Month'])] = months_value[list(row).index(row['Month'])] + float(row['Value'])
-                        print(months_value[list(row).index(row['Month'])])
+                        months_value[months.index(row['Month'])] = months_value[months.index(row['Month'])] + float(row['Value'])
+                        break
 
     for i,month in enumerate(months):
         #new_row = pd.DataFrame({month:months_value[i]})
         # Converting to the dataframe 
         new_row = pd.DataFrame({'Month': [month],'Value': [months_value[i]]})
         months_df.loc[len(months_df)] = [month,months_value[i]]
-        print(months_df)
         #pd.concat([months_df,new_row], ignore_index=True)
 
     #print (df)
     for index, unique in enumerate(pd.unique(df['Category'])):
         if unique not in unique_values and not unique == "":
             # Calculate the average of 'col1' ignoring 0 values
-            print(months_df['Value'])
             average = months_df[months_df['Value'] != 0]['Value'].mean()
+            year_current = months_df[months_df['Value'] != 0]['Value'].sum()
 
-            monthly_string = "Budget Current: $" + str(average)
+            monthly_string = "Budget Current Average: $" + str(average)
+            yearly_string = "Budget Current: $" + str(year_current)
             unique_values.append(unique)
             str_1_head = "Category Name: " + row['Category']
             head_1 = categories.insert("", 'end', text =str_1_head, values=(row['Category']), tags=CATEGORY)
@@ -318,7 +326,7 @@ def open_export_window():
             child_head_y = categories.insert(head_1, 'end', text ="Yearly", values=("0"), tags=YEAR_TAG)
             child_m1 = categories.insert(child_head_m, 'end', text =monthly_string, values=("0"), tags=VALUE)
             child_m2 = categories.insert(child_head_m, 'end', text ="Budget Allocated: $0", values=("0"), tags=VALUE)
-            child_y1 = categories.insert(child_head_y, 'end', text ="Budget Current: $0", values=("0"), tags=VALUE)
+            child_y1 = categories.insert(child_head_y, 'end', text =yearly_string, values=("0"), tags=VALUE)
             child_y2 = categories.insert(child_head_y, 'end', text ="Budget Allocated: $0", values=("0"), tags=VALUE)
 
 
@@ -382,6 +390,10 @@ def open_export_window():
     check_but5.pack()
     check_but6.pack()
     '''
+
+    # Get the number of columns
+    test = categories["columns"]
+    num_columns = len(categories["columns"])
 
 
 # Adjust size
