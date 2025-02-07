@@ -23,6 +23,8 @@ import pandas as pd
 import re
 #for the month conversion:
 import datetime
+#for nan values in zero conversion:
+import numpy as np
 
 ################################
 #Program Version:
@@ -275,19 +277,30 @@ def open_export_window():
 
     # Get the month to month data:
     months_df = pd.DataFrame(columns=['Month','Value'])
-    category_per_month_value_df = pd.DataFrame(columns=['Category','Month_Values_List'])
+    category_per_month_value_df = pd.DataFrame(columns=['Category'])
     months = ['January', 'February', 'March', 'April', 'May', 'June', 
                     'July', 'August', 'September', 'October', 'November', 'December']
     months_value = [0,0,0,0,0,
                     0,0,0,0,0,
                     0,0]
+    cat_list = []
 
+    for distinguishable in pd.unique(df['Category']):
+        new_row = pd.DataFrame({'Category':[distinguishable]})
+        for in_i, mon in enumerate(months):
+            new_row[mon] = months_value[in_i]
+        category_per_month_value_df = pd.concat([category_per_month_value_df, new_row], sort=False, ignore_index=True)
+
+    print(category_per_month_value_df)
+
+    '''
     for distinguishable in pd.unique(df['Category']):
         new_row = pd.DataFrame({'Category':[distinguishable],'Month_Values_List':[months_value]})
         #category_per_month_value_df[len(category_per_month_value_df)] = new_row
         category_per_month_value_df = pd.concat([category_per_month_value_df, new_row], sort=False, ignore_index=True)
 
     print(category_per_month_value_df)
+    '''
     
     # Convert the 'Date' column to datetime format
     df['Date'] = pd.to_datetime(df['Date'], format='mixed')
@@ -298,30 +311,72 @@ def open_export_window():
         for month in months:
             d_a_t_e = row['Month']
             if month == row['Month']:
-                for distinguishable in pd.unique(df['Category']):
-                    if row['Category'] == distinguishable:
-                        months_value[months.index(row['Month'])] = months_value[months.index(row['Month'])] + float(row['Value'])
-                        break
-
+                #category_per_month_value_df[row['Category']][]
+                row_index = category_per_month_value_df.index.get_loc(category_per_month_value_df[category_per_month_value_df['Category'] == row['Category']].index[0])
+                category_per_month_value_df.loc[row_index, row['Month']] = category_per_month_value_df.loc[row_index, row['Month']] + float(row['Value'])
+                # category_per_month_value_df[row_index][months.index(row['Month'])] = category_per_month_value_df[row_index][months.index(row['Month'])] + float(row['Value'])
+                break
+    '''
     for i,month in enumerate(months):
         #new_row = pd.DataFrame({month:months_value[i]})
         # Converting to the dataframe 
         new_row = pd.DataFrame({'Month': [month],'Value': [months_value[i]]})
         months_df.loc[len(months_df)] = [month,months_value[i]]
         #pd.concat([months_df,new_row], ignore_index=True)
+    '''
 
+    def average_row_values(df, exclude_cols):
+        """
+        Averages values in each row of a DataFrame, excluding specified columns and zero values.
+
+        Args:
+            df (pd.DataFrame): The input DataFrame.
+            column category to output
+            exclude_cols (list): A list of column names to exclude from the average.
+
+        Returns:
+            the average of the column category row.
+        """
+        df_filtered = df.drop(columns=exclude_cols)
+        
+        # Replace 0 with NaN to exclude them from the mean calculation
+        df_filtered = df_filtered.replace(0, np.nan)
+
+        row_average = df_filtered.mean(axis=1, skipna=True)
+        return row_average
     #print (df)
     for index, unique in enumerate(pd.unique(df['Category'])):
         if unique not in unique_values and not unique == "":
-            # Calculate the average of 'col1' ignoring 0 values
-            average = months_df[months_df['Value'] != 0]['Value'].mean()
-            year_current = months_df[months_df['Value'] != 0]['Value'].sum()
+            # Calculate the average of rows ignoring 0 values
+            # Columns to exclude from the sum
+            # Replace 0 with NaN to exclude them from the sum
+            # Row index to sum (e.g., row with index 1)
+            row_index = category_per_month_value_df.index.get_loc(category_per_month_value_df[category_per_month_value_df['Category'] == unique].index[0])
+
+            # Columns to exclude (e.g., 'col1' and 'col3')
+            exclude_cols = ['Category']
+
+            # Get the row and drop excluded columns
+            row = category_per_month_value_df.loc[row_index].drop(exclude_cols)
+
+            # Replace 0 with NaN to exclude them from the sum
+            row = row.replace(0, pd.NA).dropna()
+
+            # Get the row, exclude columns, and replace 0s with NaN
+            row_values = category_per_month_value_df.loc[row_index].drop(exclude_cols).replace(0, np.nan)
+
+            # Calculate the mean, ignoring NaNs
+            average = row_values.mean()
+
+            # Calculate the sum
+            row_sum = row.sum()
+            year_current = row_sum
 
             monthly_string = "Budget Current Average: $" + str(average)
             yearly_string = "Budget Current: $" + str(year_current)
             unique_values.append(unique)
-            str_1_head = "Category Name: " + row['Category']
-            head_1 = categories.insert("", 'end', text =str_1_head, values=(row['Category']), tags=CATEGORY)
+            str_1_head = "Category Name: " + unique
+            head_1 = categories.insert("", 'end', text =str_1_head, values=(unique), tags=CATEGORY)
             child_head_m = categories.insert(head_1, 'end', text ="Monthly", values=("0"), tags=MONTH_TAG)
             child_head_y = categories.insert(head_1, 'end', text ="Yearly", values=("0"), tags=YEAR_TAG)
             child_m1 = categories.insert(child_head_m, 'end', text =monthly_string, values=("0"), tags=VALUE)
