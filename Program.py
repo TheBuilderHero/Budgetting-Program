@@ -238,7 +238,7 @@ def open_export_window():
     tk.Label(export_screen, text="These are the export options").pack()
     tk.Button(export_screen, text="Export", command=initiate_export).pack(side="bottom", anchor="se", padx=10, pady=10)
 
-    categories = ttk.Treeview(export_screen, height=20, selectmode ='browse', columns=("Budget"))
+    categories = ttk.Treeview(export_screen, height=20, selectmode ='browse') #, columns=("Budget")
     categories.heading("#0", text='Budget Data')
     categories.column('#0', minwidth=100, width=300, stretch=True)
     categories.pack(side="left")
