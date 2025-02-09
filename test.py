@@ -1,12 +1,14 @@
-import pandas as pd
+import tkinter as tk
+from tkinter import ttk
 
-# Create a DataFrame with a date column
-df = pd.DataFrame({'date': ['01-01-2023', '02-15-2023', '03-31-2023']})
+root = tk.Tk()
 
-# Convert the 'date' column to datetime format
-df['date'] = pd.to_datetime(df['date'])
+tree = ttk.Treeview(root, columns=("col1", "col2"))
+tree.heading("#0", text="Main")  # Changes the heading of the default column
+tree.heading("col1", text="Column 1")
+tree.heading("col2", text="Column 2")
 
-# Extract the month name
-df['month_name'] = df['date'].dt.month_name()
+tree.insert("", tk.END, text="Item 1", values=("value 1", "value 2"))
 
-print(df)
+tree.pack()
+root.mainloop()

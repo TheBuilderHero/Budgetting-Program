@@ -61,7 +61,11 @@ treev = ttk.Treeview(r, height=20, selectmode ='extended')
         none: Disables selection entirely.
 '''
 
-
+def get_column_index(tree, column_heading):
+        for i, col in enumerate(tree["columns"]):
+            if tree.heading(col)["text"] == column_heading:
+                return i
+        return None  # Column heading not found
 
 def open_export_window():
     CATEGORY = 'Category'
@@ -86,12 +90,6 @@ def open_export_window():
     
     def calculate_custom_category_totals():
         return 0
-    
-    def get_column_index(tree, column_heading):
-        for i, col in enumerate(tree["columns"]):
-            if tree.heading(col)["text"] == column_heading:
-                return i
-        return None  # Column heading not found
     
     def initiate_export():
         # Check if at least one of the checkboxes are checked. Needed for export.
@@ -451,6 +449,23 @@ def open_export_window():
     num_columns = len(categories["columns"])
 
 
+
+def column_name_change():
+    if len(change_column_entry.get()) > 0:
+        old_column = change_column_combobox.get()
+        new_column = change_column_entry.get()
+        values_col = list(change_column_combobox['values'])
+        index = values_col.index(old_column)
+        values_col.pop(index)
+        values_col.append(new_column)
+        change_column_combobox['values'] = values_col
+        change_column_combobox.set(new_column)
+        old_column_index = get_column_index(treev, old_column)
+        if old_column_index >= 0:
+            treev.heading(old_column_index, text=new_column)
+        
+
+
 # Adjust size
 # I want it resizable so that the scrolling and the data boxes are not messed up by it.
 r.minsize(width=600,height=10)
@@ -464,11 +479,32 @@ data_options_label = LabelFrame(r, text='Data Options', font = "30")
 data_options_label.pack(side='left', fill='both')
 
 #category grouping label
-label_category_group = LabelFrame(data_options_label)
-label_category_group.pack(side='left')
+label_left_data_options = LabelFrame(data_options_label, borderwidth=0)
+label_change_tree_group = LabelFrame(label_left_data_options, borderwidth=0)
+lebel_change_column = LabelFrame(label_change_tree_group, text='Update Column Name', font=35)
+lebel_change_sign = LabelFrame(label_change_tree_group, text='Update Value Sign +/-',font=35)
+change_column_entry_label = ttk.LabelFrame(lebel_change_column, text='Choose Column to Change')
+change_column_entry = ttk.Entry(lebel_change_column)
+change_column_button = ttk.Button(lebel_change_column, text='Change Column Name', command=column_name_change)
+change_sign_combobox_label = ttk.LabelFrame(lebel_change_sign, text='Choose Column to Change')
+change_sign_button = ttk.Button(lebel_change_sign, text='Change +/- Sign')
+
+label_left_data_options.pack(side='left')
+label_change_tree_group.pack(side='top', anchor='n', fill='both', pady=+30)
+lebel_change_column.pack(side='left', anchor='center')
+lebel_change_sign.pack(side='right', anchor='center')
+change_column_entry_label.pack()
+change_sign_combobox_label.pack()
+change_column_entry.pack()
+change_column_button.pack()
+change_sign_button.pack()
+
+#category grouping label
+label_category_group = LabelFrame(label_left_data_options, borderwidth=0)
+label_category_group.pack(side='bottom',anchor='s', pady=+30)
 
 # This will create a LabelFrame to hold (Date, Description, Value)
-label_frame_date_desc_value = LabelFrame(label_category_group, text='Corresponding Columns', font = "30")
+label_frame_date_desc_value = LabelFrame(label_category_group, text='Corresponding Columns', font = "30", pady=30)
 label_frame_date = LabelFrame(label_frame_date_desc_value, text='Date Column', font = "20")
 label_frame_desc = LabelFrame(label_frame_date_desc_value, text='Description Column', font = "20")
 label_frame_value = LabelFrame(label_frame_date_desc_value, text='Value Column', font = "20")
@@ -550,6 +586,7 @@ entry = ttk.Entry(label_category_selection_add, width = 20)
 entry.pack()
 
 
+
 def clear_new_category_entry():
         entry.delete(0, tk.END)
 
@@ -563,6 +600,10 @@ def add_new_category():
         dropdown["values"] = values + [entry.get()]
         clear_new_category_entry()
 
+sign_name_var = tk.StringVar()
+sign_name_prev = ""
+column_name_var = tk.StringVar()
+column_name_prev = ""
 date_var = tk.StringVar()
 date_prev = ""
 desc_var = tk.StringVar()
@@ -573,6 +614,8 @@ value_prev = ""
 date_add_toggle = []
 desc_add_toggle = []
 value_add_toggle = []
+column_name_toggle = []
+sign_name_toggle = []
 
 def search_by_first_element(list_of_lists, target): #returns the boolean value associated with the target. if item is not found returns false.
     #print(list_of_lists)
@@ -593,6 +636,119 @@ def flip_bool_tuple(list_of_lists, target):
         if list_of_lists[i][0] == target:
             list_of_lists[i][1] = not list_of_lists[i][1]
     return list_of_lists
+
+def update_sign_in_dropdowns(value_to_remove):
+    global sign_name_prev
+    global sign_name_toggle
+    #toggle the add and remove
+    evaluation_of_toggle = search_by_first_element(sign_name_toggle, value_to_remove)
+    if evaluation_of_toggle:
+        
+        #if we are supposed to add. Then we add the value back into the date list
+
+        #update the toggle boolean:
+        sign_name_toggle = flip_bool_tuple(sign_name_toggle, value_to_remove)
+
+        #first get the complete list:
+        sign_options = list(change_sign_combobox['values'])
+
+        #then add the value to the list:
+        sign_options.append(value_to_remove) 
+
+        #now update the new list:
+        change_sign_combobox['values'] = sign_options
+    else:
+        #if we are supposed to remove. Then we remove the value from the date list#if we are supposed to remove. Then we remove the value from the date list
+
+        if evaluation_of_toggle is None:
+            #This means that value does not exist and we need to add it to the toggle list:
+            sign_name_toggle = add_item_toggle_list(sign_name_toggle, value_to_remove)
+
+        #update the toggle boolean:
+        sign_name_toggle = flip_bool_tuple(sign_name_toggle, value_to_remove)
+
+        #first get the complete list:
+        sign_options = list(change_sign_combobox['values'])
+
+        #first check if a value is selected:
+        #remove selected value:
+        try:
+            if len(date_var.get()) > 0: #this means it is not blank
+                #check if the value is the sign selected for deletion:
+                if value_to_remove == sign_name_var.get():
+                    change_sign_combobox.set('')
+        except UnboundLocalError:
+            #This means that the value date_var was empty ''
+            pass
+
+        #then add the value to the list:
+        try:
+            sign_options.remove(value_to_remove) 
+        except ValueError:
+            pass
+
+        #now update the new list:
+        change_sign_combobox['values'] = sign_options
+        pass
+
+    return # so not to execute the rest of the function.
+
+def update_columns_in_dropdowns(value_to_remove):
+    global column_name_prev
+    global column_name_toggle
+    #toggle the add and remove
+    evaluation_of_toggle = search_by_first_element(column_name_toggle, value_to_remove)
+    if evaluation_of_toggle:
+        
+        #if we are supposed to add. Then we add the value back into the date list
+
+        #update the toggle boolean:
+        column_name_toggle = flip_bool_tuple(column_name_toggle, value_to_remove)
+
+        #first get the complete list:
+        column_options = list(change_column_combobox['values'])
+
+        #then add the value to the list:
+        column_options.append(value_to_remove) 
+
+        #now update the new list:
+        change_column_combobox['values'] = column_options
+    else:
+        #if we are supposed to remove. Then we remove the value from the date list#if we are supposed to remove. Then we remove the value from the date list
+
+        if evaluation_of_toggle is None:
+            #This means that value does not exist and we need to add it to the toggle list:
+            column_name_toggle = add_item_toggle_list(column_name_toggle, value_to_remove)
+
+        #update the toggle boolean:
+        column_name_toggle = flip_bool_tuple(column_name_toggle, value_to_remove)
+
+        #first get the complete list:
+        column_options = list(change_column_combobox['values'])
+
+        #first check if a value is selected:
+        #remove selected value:
+        try:
+            if len(date_var.get()) > 0: #this means it is not blank
+                #check if the value is the column selected for deletion:
+                if value_to_remove == column_name_var.get():
+                    change_column_combobox.set('')
+        except UnboundLocalError:
+            #This means that the value date_var was empty ''
+            pass
+
+        #then add the value to the list:
+        try:
+            column_options.remove(value_to_remove) 
+        except ValueError:
+            pass
+
+        #now update the new list:
+        change_column_combobox['values'] = column_options
+        pass
+
+    return # so not to execute the rest of the function.
+
 
 def update_date_dropdown(event):
     global date_prev
@@ -819,6 +975,13 @@ def update_value_dropdown(event):
 
         value_prev = value_var.get()
 
+
+
+change_column_combobox = ttk.Combobox(change_column_entry_label, width = 20, state="readonly", textvariable=column_name_var)
+change_sign_combobox = ttk.Combobox(change_sign_combobox_label, width = 20, state="readonly", textvariable=sign_name_var)
+change_column_combobox.pack()
+change_sign_combobox.pack()
+
 entry_b = ttk.Button(label_category_selection_add, text='Create New Label', width = 20, command=add_new_category)
 entry_b.pack()
 dropdown = ttk.Combobox(label_category_selection_select, width = 20, state="readonly")
@@ -947,6 +1110,8 @@ def add_back_column(tree, index):
     # Remove the second column
     tree.column(treev['columns'][index], width=column_width_setting, stretch=False)
     tree.heading(treev['columns'][index], text=treev['columns'][index])
+    update_sign_in_dropdowns(treev['columns'][index])
+    update_columns_in_dropdowns(treev['columns'][index])
     update_date_dropdown(treev['columns'][index])
     update_desc_dropdown(treev['columns'][index])
     update_value_dropdown(treev['columns'][index])
@@ -957,6 +1122,8 @@ def remove_column(tree, index):
     # Remove the second column
     tree.column(treev['columns'][index], width=0, stretch=False)
     tree.heading(treev['columns'][index], text=removed_columns_str)
+    update_sign_in_dropdowns(treev['columns'][index])
+    update_columns_in_dropdowns(treev['columns'][index])
     update_date_dropdown(treev['columns'][index])
     update_desc_dropdown(treev['columns'][index])
     update_value_dropdown(treev['columns'][index])
@@ -1049,7 +1216,7 @@ def load_file():
                 # Find the index of 'Custom Category'
                 try:
                     skip_add_col = row.index('Custom Category')
-                    temprow = row
+                    temprow = list(row)
                     temprow.pop(0)
                     row_without_custom = temprow
                 except ValueError:
@@ -1080,11 +1247,16 @@ def load_file():
                 dropdown_date['values'] = row_without_custom
                 dropdown_desc['values'] = row_without_custom
                 dropdown_value['values'] = row_without_custom
+                change_sign_combobox['values'] = row_without_custom
+                change_column_combobox['values'] = row_without_custom
 
                 for butt in ButtonsN:
                     butt.pack(side='top', anchor='center')
             else:
-                row = ("",) + row
+                custom_row_without_first_index = list(row)
+                if skip_add_col > -1:
+                    custom_row_without_first_index.pop(0)
+                row = ("",) + tuple(custom_row_without_first_index)
                 treev.insert("", 'end', text ="L1", values =(row))
             for i,col in enumerate(row):
                 if firstTimeOver is True:
