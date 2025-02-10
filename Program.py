@@ -475,6 +475,15 @@ def find_and_change_value_item(old_item, new_item):
     except ValueError:
         print(f"{old_item} not found in Combobox")
 
+def find_and_change_sign_item(old_item, new_item):
+    current_values = list(change_sign_combobox['values'])
+    try:
+        index = current_values.index(old_item)
+        current_values[index] = new_item
+        change_sign_combobox['values'] = tuple(current_values) 
+    except ValueError:
+        print(f"{old_item} not found in Combobox")
+
 
 def change_sign_item():
     try:
@@ -557,7 +566,7 @@ def column_name_change():
             find_and_change_desc_item(old_column, new_column)
             find_and_change_value_item(old_column, new_column)
             find_and_change_checkbox_item(old_column, new_column)
-            #find_and_change_sign_item(old_column, new_column)
+            find_and_change_sign_item(old_column, new_column)
             
             cols = list(treev['columns'])
             print(cols)
