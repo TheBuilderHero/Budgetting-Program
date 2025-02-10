@@ -361,14 +361,14 @@ def open_export_window():
             row = row.replace(0, pd.NA).dropna()
 
             # Get the row, exclude columns, and replace 0s with NaN
-            row_values = category_per_month_value_df.loc[row_index].drop(exclude_cols).replace(0, np.nan)
+            row_values = category_per_month_value_df.loc[row_index].drop(exclude_cols).replace(0, np.nan).infer_objects(copy=False)
 
             # Calculate the mean, ignoring NaNs
-            average = row_values.mean()
+            average = round(row_values.mean(), 2)
 
             # Calculate the sum
             row_sum = row.sum()
-            year_current = row_sum
+            year_current = round(row_sum, 2)
 
             monthly_string = "Budget Current Average: $" + str(average)
             yearly_string = "Budget Current: $" + str(year_current)
@@ -377,9 +377,9 @@ def open_export_window():
             head_1 = categories.insert("", 'end', text =str_1_head, values=(unique), tags=CATEGORY)
             child_head_m = categories.insert(head_1, 'end', text ="Monthly", values=("0"), tags=MONTH_TAG)
             child_head_y = categories.insert(head_1, 'end', text ="Yearly", values=("0"), tags=YEAR_TAG)
-            child_m1 = categories.insert(child_head_m, 'end', text =monthly_string, values=("0"), tags=VALUE)
+            child_m1 = categories.insert(child_head_m, 'end', text =monthly_string, values=(str(average)), tags=VALUE)
             child_m2 = categories.insert(child_head_m, 'end', text ="Budget Allocated: $0", values=("0"), tags=VALUE)
-            child_y1 = categories.insert(child_head_y, 'end', text =yearly_string, values=("0"), tags=VALUE)
+            child_y1 = categories.insert(child_head_y, 'end', text =yearly_string, values=(str(year_current)), tags=VALUE)
             child_y2 = categories.insert(child_head_y, 'end', text ="Budget Allocated: $0", values=("0"), tags=VALUE)
 
 
