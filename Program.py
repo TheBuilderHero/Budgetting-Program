@@ -476,7 +476,7 @@ def find_and_change_value_item(old_item, new_item):
         print(f"{old_item} not found in Combobox")
 
 
-def find_and_change_sign_item():
+def change_sign_item():
     try:
         #get column selected:
         selected_items = treev.selection()
@@ -522,6 +522,22 @@ def find_and_change_checkbox_item(old_item, new_item):
                 #print(ButtonsN[i])
             except ValueError:
                 print(f"{old_item} not found in Combobox")
+
+def find_and_change_checkbox_item(old_item, new_item):
+    for i, button in enumerate(ButtonsN):
+        if button['text'] == old_item:
+            try:
+                for i_in, header in enumerate(treev['columns']):
+                    if header == old_item:
+                        col_txt = '#' + str(i_in)
+                        #treev.heading(col_txt, text=new_item)
+                print(i)
+                ButtonsN[i].config(text=new_item)
+                #treev.heading('old_item', text='Column One')
+                
+                #print(ButtonsN[i])
+            except ValueError:
+                print(f"{old_item} not found in Combobox")
                 
 
 def column_name_change():
@@ -536,11 +552,25 @@ def column_name_change():
         change_column_combobox.set(new_column)
         old_column_index = get_column_index(treev, old_column)
         if old_column_index >= 0:
-            treev.heading(old_column_index, text=new_column)
+            #treev.heading(old_column_index, text=new_column)
             find_and_change_date_item(old_column, new_column)
             find_and_change_desc_item(old_column, new_column)
             find_and_change_value_item(old_column, new_column)
             find_and_change_checkbox_item(old_column, new_column)
+            #find_and_change_sign_item(old_column, new_column)
+            
+            cols = list(treev['columns'])
+            print(cols)
+            cols[index+1] = new_column
+            treev.configure(columns=tuple(cols))
+            treev
+            for i_col, column_val in enumerate(cols):
+                # Assigning the heading names to the respective columns
+                treev.column(i_col, width=column_width_setting, stretch=False)
+                treev.heading(column=i_col ,text=column_val)
+            #treev.configure(width=(column_width_setting*len(list(treev['columns']))))
+            treev['show'] = 'headings'
+            print(cols)
         
         
 
@@ -566,7 +596,7 @@ change_column_entry_label = ttk.LabelFrame(lebel_change_column, text='Choose Col
 change_column_entry = ttk.Entry(lebel_change_column)
 change_column_button = ttk.Button(lebel_change_column, text='Change Column Name', command=column_name_change)
 change_sign_combobox_label = ttk.LabelFrame(lebel_change_sign, text='Choose Column to Change')
-change_sign_button = ttk.Button(lebel_change_sign, text='Change +/- Sign', command=find_and_change_sign_item)
+change_sign_button = ttk.Button(lebel_change_sign, text='Change +/- Sign', command=change_sign_item)
 
 label_left_data_options.pack(side='left')
 label_change_tree_group.pack(side='top', anchor='n', fill='both', pady=+30)
