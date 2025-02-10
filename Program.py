@@ -448,7 +448,81 @@ def open_export_window():
     test = categories["columns"]
     num_columns = len(categories["columns"])
 
+def find_and_change_date_item(old_item, new_item):
+    current_values = list(dropdown_date['values'])
+    try:
+        index = current_values.index(old_item)
+        current_values[index] = new_item
+        dropdown_date['values'] = tuple(current_values) 
+    except ValueError:
+        print(f"{old_item} not found in Combobox")
 
+def find_and_change_desc_item(old_item, new_item):
+    current_values = list(dropdown_desc['values'])
+    try:
+        index = current_values.index(old_item)
+        current_values[index] = new_item
+        dropdown_desc['values'] = tuple(current_values) 
+    except ValueError:
+        print(f"{old_item} not found in Combobox")
+
+def find_and_change_value_item(old_item, new_item):
+    current_values = list(dropdown_value['values'])
+    try:
+        index = current_values.index(old_item)
+        current_values[index] = new_item
+        dropdown_value['values'] = tuple(current_values) 
+    except ValueError:
+        print(f"{old_item} not found in Combobox")
+
+
+def find_and_change_sign_item():
+    try:
+        #get column selected:
+        selected_items = treev.selection()
+        for selected_item in selected_items:
+            #get row:
+            item_data = treev.item(selected_item)['values']
+            
+            # get column index:
+            box = change_sign_combobox.get()
+
+            index_of_col_name = get_column_index(treev,box)
+            if index_of_col_name == None:
+                print("Failed to find value")
+
+            # get value:
+            cell_value = item_data[index_of_col_name]
+
+            #flip value:
+            #iid = selected_row[index_of_col_name]
+            
+
+            # Modify the values (example: change the first column)
+            item_data[index_of_col_name] = str(float(cell_value) * -1)
+
+            treev.item(selected_item, values=tuple(item_data))
+            #update_treeview_cell(iid=iid, column=change_column_combobox.get(), new_value=)
+
+    except ValueError:
+        print(f"item not found in Combobox")
+
+def find_and_change_checkbox_item(old_item, new_item):
+    for i, button in enumerate(ButtonsN):
+        if button['text'] == old_item:
+            try:
+                for i_in, header in enumerate(treev['columns']):
+                    if header == old_item:
+                        col_txt = '#' + str(i_in)
+                        #treev.heading(col_txt, text=new_item)
+                print(i)
+                ButtonsN[i].config(text=new_item)
+                #treev.heading('old_item', text='Column One')
+                
+                #print(ButtonsN[i])
+            except ValueError:
+                print(f"{old_item} not found in Combobox")
+                
 
 def column_name_change():
     if len(change_column_entry.get()) > 0:
@@ -463,6 +537,11 @@ def column_name_change():
         old_column_index = get_column_index(treev, old_column)
         if old_column_index >= 0:
             treev.heading(old_column_index, text=new_column)
+            find_and_change_date_item(old_column, new_column)
+            find_and_change_desc_item(old_column, new_column)
+            find_and_change_value_item(old_column, new_column)
+            find_and_change_checkbox_item(old_column, new_column)
+        
         
 
 
@@ -487,7 +566,7 @@ change_column_entry_label = ttk.LabelFrame(lebel_change_column, text='Choose Col
 change_column_entry = ttk.Entry(lebel_change_column)
 change_column_button = ttk.Button(lebel_change_column, text='Change Column Name', command=column_name_change)
 change_sign_combobox_label = ttk.LabelFrame(lebel_change_sign, text='Choose Column to Change')
-change_sign_button = ttk.Button(lebel_change_sign, text='Change +/- Sign')
+change_sign_button = ttk.Button(lebel_change_sign, text='Change +/- Sign', command=find_and_change_sign_item)
 
 label_left_data_options.pack(side='left')
 label_change_tree_group.pack(side='top', anchor='n', fill='both', pady=+30)
@@ -637,61 +716,18 @@ def flip_bool_tuple(list_of_lists, target):
             list_of_lists[i][1] = not list_of_lists[i][1]
     return list_of_lists
 
-def update_sign_in_dropdowns(value_to_remove):
-    global sign_name_prev
-    global sign_name_toggle
-    #toggle the add and remove
-    evaluation_of_toggle = search_by_first_element(sign_name_toggle, value_to_remove)
-    if evaluation_of_toggle:
-        
-        #if we are supposed to add. Then we add the value back into the date list
+def modify_row(index):
+    selected_items = treev.selection()
+    if not selected_items:
+        return  # No row selected
 
-        #update the toggle boolean:
-        sign_name_toggle = flip_bool_tuple(sign_name_toggle, value_to_remove)
+    selected_iid = selected_items[index]
+    current_values = list(treev.item(selected_iid, 'values'))
 
-        #first get the complete list:
-        sign_options = list(change_sign_combobox['values'])
+    # Modify the values (example: change the first column)
+    current_values[index] = "Updated Value"
 
-        #then add the value to the list:
-        sign_options.append(value_to_remove) 
-
-        #now update the new list:
-        change_sign_combobox['values'] = sign_options
-    else:
-        #if we are supposed to remove. Then we remove the value from the date list#if we are supposed to remove. Then we remove the value from the date list
-
-        if evaluation_of_toggle is None:
-            #This means that value does not exist and we need to add it to the toggle list:
-            sign_name_toggle = add_item_toggle_list(sign_name_toggle, value_to_remove)
-
-        #update the toggle boolean:
-        sign_name_toggle = flip_bool_tuple(sign_name_toggle, value_to_remove)
-
-        #first get the complete list:
-        sign_options = list(change_sign_combobox['values'])
-
-        #first check if a value is selected:
-        #remove selected value:
-        try:
-            if len(date_var.get()) > 0: #this means it is not blank
-                #check if the value is the sign selected for deletion:
-                if value_to_remove == sign_name_var.get():
-                    change_sign_combobox.set('')
-        except UnboundLocalError:
-            #This means that the value date_var was empty ''
-            pass
-
-        #then add the value to the list:
-        try:
-            sign_options.remove(value_to_remove) 
-        except ValueError:
-            pass
-
-        #now update the new list:
-        change_sign_combobox['values'] = sign_options
-        pass
-
-    return # so not to execute the rest of the function.
+    treev.item(selected_iid, values=tuple(current_values))
 
 def update_columns_in_dropdowns(value_to_remove):
     global column_name_prev
@@ -1110,7 +1146,7 @@ def add_back_column(tree, index):
     # Remove the second column
     tree.column(treev['columns'][index], width=column_width_setting, stretch=False)
     tree.heading(treev['columns'][index], text=treev['columns'][index])
-    update_sign_in_dropdowns(treev['columns'][index])
+    #update_sign_in_dropdowns(treev['columns'][index])
     update_columns_in_dropdowns(treev['columns'][index])
     update_date_dropdown(treev['columns'][index])
     update_desc_dropdown(treev['columns'][index])
@@ -1122,7 +1158,7 @@ def remove_column(tree, index):
     # Remove the second column
     tree.column(treev['columns'][index], width=0, stretch=False)
     tree.heading(treev['columns'][index], text=removed_columns_str)
-    update_sign_in_dropdowns(treev['columns'][index])
+    #update_sign_in_dropdowns(treev['columns'][index])
     update_columns_in_dropdowns(treev['columns'][index])
     update_date_dropdown(treev['columns'][index])
     update_desc_dropdown(treev['columns'][index])
