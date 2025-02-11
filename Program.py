@@ -258,16 +258,22 @@ def open_export_window():
     for row in treev.get_children():
         #We need to add the code for going through the whole data set and adding up all the values labeled in a given custom column.
         # but before we do that we need to make the value column essential along with maybe the date and description column. So make them all need to not be null in value.
+        try:
+            index_date = get_column_index(treev, date_var.get())
+            index_desc = get_column_index(treev, desc_var.get())
+            index_value = get_column_index(treev, value_var.get())
 
-        index_date = get_column_index(treev, date_var.get())
-        index_desc = get_column_index(treev, desc_var.get())
-        index_value = get_column_index(treev, value_var.get())
-
-        # get data:
-        category_data = treev.item(row)['values'][0]
-        date_data = treev.item(row)['values'][index_date]
-        desc_data = treev.item(row)['values'][index_desc]
-        value_data = treev.item(row)['values'][index_value]
+            # get data:
+            category_data = treev.item(row)['values'][0]
+            date_data = treev.item(row)['values'][index_date]
+            desc_data = treev.item(row)['values'][index_desc]
+            value_data = treev.item(row)['values'][index_value]
+        
+        except TypeError:
+            messagebox.showerror("Select Column Data", "Please verify you have the corresponding columns selected for Date, Description and, Value.", parent=export_screen)
+            #so not to continue we return and force this to fail.
+            export_screen.destroy()
+            return
 
         #now place the values into the tree based on their index positions in the treeview.
         df.loc[len(df)] = [category_data, date_data, desc_data, value_data]
@@ -1280,6 +1286,8 @@ def load_file():
         skip_add_col = -1
         #columnsInTree = ()
 
+        unique_custom_values = []
+
 
 
         # Read and print the data
@@ -1294,11 +1302,10 @@ def load_file():
                     temprow = list(row)
                     temprow.pop(0)
                     row_without_custom = temprow
-                except ValueError:
-                    pass
-                if skip_add_col < 0:
+                except ValueError: #if custom was not found then we add the custom column
                     row_without_custom = row
                     row = ("Custom Category",) + row
+                
                 treev['columns'] = (row)
                 column_width_setting = int(int((init_column_width_setting * 8)) / (int(len(treev['columns'])) + 1))
                 check_vars = []
@@ -1329,9 +1336,19 @@ def load_file():
                     butt.pack(side='top', anchor='center')
             else:
                 custom_row_without_first_index = list(row)
-                if skip_add_col > -1:
-                    custom_row_without_first_index.pop(0)
-                row = ("",) + tuple(custom_row_without_first_index)
+                if skip_add_col == -1: # if there is not data from an imported file custom column.
+                    row = ("",) + tuple(custom_row_without_first_index)
+                else:
+                    if row[0] == None:
+                        temp_list = list(row)
+                        temp_list[0] = "" # update none values to blank strings.
+                        row = temp_list
+                    else:
+                        if row[0] not in unique_custom_values:
+                            # add to unique values and add it to the combo box for 
+                            unique_custom_values.append(row[0])
+                            dropdown["values"] = unique_custom_values
+
                 treev.insert("", 'end', text ="L1", values =(row))
             for i,col in enumerate(row):
                 if firstTimeOver is True:
@@ -1343,6 +1360,7 @@ def load_file():
 
         # Defining heading
         treev['show'] = 'headings'
+        dropdown.set('')
 
 
 #Tree Saving to file:
