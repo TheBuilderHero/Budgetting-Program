@@ -77,9 +77,14 @@ def open_export_window():
     check_but1_var = IntVar()
     check_but2_var = IntVar()
 
+    global remove_zero_months_var
     export_date_column = date_var.get()
     export_desc_column = desc_var.get()
     export_value_column = value_var.get()
+
+    # Get the month to month data:
+    months_df = pd.DataFrame(columns=['Month','Value'])
+    category_per_month_value_df = pd.DataFrame(columns=['Category'])
 
 
     def clear_entry():
@@ -105,12 +110,85 @@ def open_export_window():
 
         if check_but1_var.get(): #get the state
             #export the summary
+            #List of months for worksheet titles
+            months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                    'July', 'August', 'September', 'October', 'November', 'December']
+
+            # Create a worksheet for each month
+            first_num = True
+            temp_ws = wbExport.create_sheet(title="Summary")
+            for i_head, each_category in enumerate(listOfEntriesInTreeView):  
+                # taking the two children: year, month we need to get the children of those and pull the numbers.
+                year_or_month = categories.get_children(each_category)
+                for i, nums_data_head in enumerate(year_or_month):
+
+                    if YEAR_TAG in categories.item(nums_data_head)["tags"]:
+                        pass 
+                    if MONTH_TAG in categories.item(nums_data_head)["tags"]:
+                        cell_str = ""
+                        i_head = i_head + 1 + 1 # +1 because values have to start at 1 and not 0 and also want to add one more for the items not at the top.
+                        # Add column headers
+                        cell_str = "A1"
+                        temp_ws[cell_str].font = openpyxl.styles.Font(size=20, bold=True, color="000000")
+
+                        # Align text
+                        temp_ws[cell_str].alignment = openpyxl.styles.Alignment(horizontal="center")
+                        temp_ws[cell_str] = str("Category")
+                        
+                        cell_str = "B1"
+                        temp_ws[cell_str].font = openpyxl.styles.Font(size=20, bold=True, color="000000")
+
+                        # Align text
+                        temp_ws[cell_str].alignment = openpyxl.styles.Alignment(horizontal="center")
+                        temp_ws[cell_str] = str("Current Average Monthly Spendings")
+                                                
+                        cell_str = "C1"
+                        temp_ws[cell_str].font = openpyxl.styles.Font(size=20, bold=True, color="000000")
+
+                        # Align text
+                        temp_ws[cell_str].alignment = openpyxl.styles.Alignment(horizontal="center")
+                        temp_ws[cell_str] = str("Allocated Monthly Spendings")
+
+                        #if CATEGORY in categories.item(data)["tags"]:
+                        #print(categories.item(data)['values'][0])
+                        cell_str = "A" + str(i_head)
+
+                        # Now you can apply your styles and alignment
+                        # Change font style
+                        temp_ws[cell_str].font = openpyxl.styles.Font(size=16, bold=True, color="FF0000")
+
+                        # Align text
+                        temp_ws[cell_str].alignment = openpyxl.styles.Alignment(horizontal="center")
+                        temp_ws[cell_str] = str(categories.item(each_category)['values'][0])
+
+                        #Now we have to add the numbers to the sheet:
+                        
+                        num_children = categories.get_children(nums_data_head)
+                        for i2 , data in enumerate(num_children):
+                            if first_num:
+                                cell_str = "B" + str(i_head)
+                                first_num = False
+                            else:
+                                cell_str = "C" + str(i_head)
+                                first_num = True
+
+                            #print(categories.item(data)['values'][0])
+                            
+
+                            # Now you can apply your styles and alignment
+                            # Change font style
+                            temp_ws[cell_str].font = openpyxl.styles.Font(size=12, bold=False, color="03fc6f")
+
+                            # Align text
+                            temp_ws[cell_str].alignment = openpyxl.styles.Alignment(horizontal='right')
+                            temp_ws[cell_str] = str(categories.item(data)['values'][0])
             pass
         else:
             #do not export the summary
             pass
 
         if check_but2_var.get(): #get the state
+            #Export month to month data
             #List of months for worksheet titles
             months = ['January', 'February', 'March', 'April', 'May', 'June', 
                     'July', 'August', 'September', 'October', 'November', 'December']
@@ -172,7 +250,7 @@ def open_export_window():
         del wbExport['Sheet']
 
         # Save the workbook
-        wbExport.save("MonthlyExpenses.xlsx")
+        wbExport.save("Expenses.xlsx")
         print("Workbook created with a sheet for each month.")
 
 
@@ -279,9 +357,7 @@ def open_export_window():
         df.loc[len(df)] = [category_data, date_data, desc_data, value_data]
         pass
 
-    # Get the month to month data:
-    months_df = pd.DataFrame(columns=['Month','Value'])
-    category_per_month_value_df = pd.DataFrame(columns=['Category'])
+
     months = ['January', 'February', 'March', 'April', 'May', 'June', 
                     'July', 'August', 'September', 'October', 'November', 'December']
     months_value = [0,0,0,0,0,
@@ -295,7 +371,7 @@ def open_export_window():
             new_row[mon] = months_value[in_i]
         category_per_month_value_df = pd.concat([category_per_month_value_df, new_row], sort=False, ignore_index=True)
 
-    print(category_per_month_value_df)
+    #print(category_per_month_value_df)
 
     '''
     for distinguishable in pd.unique(df['Category']):
@@ -348,7 +424,8 @@ def open_export_window():
 
         row_average = df_filtered.mean(axis=1, skipna=True)
         return row_average
-    #print (df)
+    #print("DF:",df)
+    #print("CATE:",category_per_month_value_df)
     for index, unique in enumerate(pd.unique(df['Category'])):
         if unique not in unique_values and not unique == "":
             # Calculate the average of rows ignoring 0 values
@@ -360,14 +437,49 @@ def open_export_window():
             # Columns to exclude (e.g., 'col1' and 'col3')
             exclude_cols = ['Category']
 
-            # Get the row and drop excluded columns
+            # drop category from the list of month values:
             row = category_per_month_value_df.loc[row_index].drop(exclude_cols)
+            
+            #For calculations that need the zero values we will create a seperate dataframe:
+            row_with_zero = row
 
-            # Replace 0 with NaN to exclude them from the sum
-            row = row.replace(0, pd.NA).dropna()
+            def find_last_nonzero(df_temp, exclude_cols):
+                '''
+                    This will output nan if no values other than zero found
+                '''
+                df_filtered = df_temp.drop(columns=exclude_cols)
+                results = []
+                for index_temp in reversed(df_filtered.index):
+                    row_temp = df_filtered.loc[index_temp]
+                    first_nonzero_index = -1
+                    for i_temp in range(0,len(row_temp)):
+                        temp_value_out = row_temp.iloc[i_temp]
+                        if row_temp.iloc[i_temp] != 0:
+                            results.append(i_temp)
+                            #break
+                    #if first_nonzero_index != -1:
+                    #    results.append(first_nonzero_index)
+                    if first_nonzero_index == -1:
+                        results.append(np.nan)
+                return int(np.nanmax(results)) # Restore original order [::-1]
+            
+            #intially set row_values so it has a value:
+            row_values = category_per_month_value_df.loc[row_index].drop(exclude_cols)
 
-            # Get the row, exclude columns, and replace 0s with NaN
-            row_values = category_per_month_value_df.loc[row_index].drop(exclude_cols).replace(0, np.nan).infer_objects(copy=False)
+            if include_zeros_month_avg_var.get():
+                dropAfterIndex = find_last_nonzero(category_per_month_value_df,exclude_cols)
+                if not dropAfterIndex == np.nan:
+                    row = category_per_month_value_df.loc[row_index].drop(exclude_cols).iloc[:dropAfterIndex+1] #drop columns after last data value index.
+                else:
+                    # we drop all columns except one because the average is gonna be zero.
+                    row = category_per_month_value_df.loc[row_index].iloc[:, :0+1] #drop columns after last data value index.
+                row_values = category_per_month_value_df.loc[row_index].drop(exclude_cols)
+            else:
+                # Replace 0 with NaN to exclude them from the sum
+                row = row.replace(0, pd.NA).dropna()
+
+                # Get the row, exclude columns, and replace 0s with NaN
+                row_values = category_per_month_value_df.loc[row_index].drop(exclude_cols).replace(0, np.nan).infer_objects(copy=False)
 
             # Calculate the mean, ignoring NaNs
             average = round(row_values.mean(), 2)
@@ -377,6 +489,8 @@ def open_export_window():
             year_current = round(row_sum, 2)
 
             monthly_string = "Budget Current Average: $" + str(average)
+            month_string_1st_half = "Budget "
+            month_string_2nd_half = " Current: $"
             yearly_string = "Budget Current: $" + str(year_current)
             unique_values.append(unique)
             str_1_head = "Category Name: " + unique
@@ -384,6 +498,17 @@ def open_export_window():
             child_head_m = categories.insert(head_1, 'end', text ="Monthly", values=("0"), tags=MONTH_TAG)
             child_head_y = categories.insert(head_1, 'end', text ="Yearly", values=("0"), tags=YEAR_TAG)
             child_m1 = categories.insert(child_head_m, 'end', text =monthly_string, values=(str(average)), tags=VALUE)
+            #for the value in each month:
+            # Get the index (row header text) for all months
+            row_headers = row_with_zero.index
+            # Convert the index to a list of all months
+            row_headers_list = list(row_headers)
+            for month_index, month_value in enumerate(row_with_zero): # This is category_per_month_value_df without the category column and with the specific category totals per month.
+                if remove_zero_months_var.get():
+                    if month_value == 0:
+                        continue
+                temp_string = month_string_1st_half + row_headers_list[month_index] + month_string_2nd_half + str(month_value)
+                categories.insert(child_m1, 'end', text =temp_string, values=(str(month_value)), tags=VALUE)
             child_m2 = categories.insert(child_head_m, 'end', text ="Budget Allocated: $0", values=("0"), tags=VALUE)
             child_y1 = categories.insert(child_head_y, 'end', text =yearly_string, values=(str(year_current)), tags=VALUE)
             child_y2 = categories.insert(child_head_y, 'end', text ="Budget Allocated: $0", values=("0"), tags=VALUE)
@@ -1407,6 +1532,9 @@ def Proper_program_usage():
     string_ex = "The Program Intent\n\n" + "The intentbeing the way that this program functions is to allow the user to load in creditcard data and bank data and easily turn them into a graphical representation that can be viewed and explored.\n\n" + "First thing you should do when using this program is upload your bank and creditcard csv or excel files.\n" + "Then remove whatever columns are useless.\n" + "Then add a custom category to the data rows which you want to classify them all under when exported.\n" + "Finally, export the data and select the type of output you want to see when the export is complete."
     messagebox.showinfo("How To...", string_ex)
 
+def changeMonthAveraging():
+    pass
+
 #Adding a menu Bar:
 
 def donothing():
@@ -1426,6 +1554,14 @@ overrideMenu = Menu(menubar, tearoff=0)
 overrideMenu.add_checkbutton(label="Allow Multiple File", command=allow_multiple_file_uploads)
 overrideMenu.add_checkbutton(label="Turn Off Category Addition Warnings", command=cate_add_warnings)
 menubar.add_cascade(label="OverRide", menu=overrideMenu)
+
+exportMenu = Menu(menubar, tearoff=0)
+remove_zero_months_var = tk.BooleanVar()
+include_zeros_month_avg_var = tk.BooleanVar()
+exportMenu.add_checkbutton(label="Month Averaging: include previous months without purchases.",variable=include_zeros_month_avg_var)
+exportMenu.add_checkbutton(label="Month Values: do not include months with zero value in export.", variable=remove_zero_months_var)
+menubar.add_cascade(label="Additional Export Options", menu=exportMenu)
+
 
 helpmenu = Menu(menubar, tearoff=0)
 helpmenu.add_command(label="Help Index", command=Proper_program_usage)
